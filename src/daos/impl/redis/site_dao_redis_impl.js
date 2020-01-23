@@ -66,6 +66,7 @@ const insert = async (site) => {
   const client = redis.getClient();
 
   const siteHashKey = keyGenerator.getSiteHashKey(site.id);
+  // console.log(`Site is:  ${siteHashKey}, ${keyGenerator.getSiteIDsKey()}`)
 
   await client.hmsetAsync(siteHashKey, flatten(site));
   await client.saddAsync(keyGenerator.getSiteIDsKey(), siteHashKey);
@@ -96,8 +97,16 @@ const findById = async (id) => {
 /* eslint-disable arrow-body-style */
 const findAll = async () => {
   // START CHALLENGE #1
-  return [];
-  // END CHALLENGE #1
+  const client = redis.getClient();
+  const siteMemberIds = keyGenerator.getSiteIDsKey();
+  const siteMembers = await client.smembersAsync(siteMemberIds);
+
+  const hashedSiteMembers = siteMembers.map(async siteMember => {
+    const siteHash = await client.hgetallAsync(siteMember);
+    return remap(siteHash);
+  });
+
+  return await Promise.all(hashedSiteMembers);
 };
 /* eslint-enable */
 
