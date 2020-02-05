@@ -125,6 +125,11 @@ const insert = async (meterReading) => {
   const pipeline = client.batch();
 
   // START Challenge #6
+  const globalSiteStreamKey = keyGenerator.getGlobalFeedKey()
+  const localSiteStreamKey = keyGenerator.getFeedKey(meterReading.siteId)
+  pipeline.xadd(globalSiteStreamKey, 'MAXLEN', '~', globalMaxFeedLength, '*', ...fields);
+  pipeline.xadd(localSiteStreamKey, 'MAXLEN', '~', globalMaxFeedLength, '*', ...fields)
+
   // END Challenge #6
 
   await pipeline.execAsync();
