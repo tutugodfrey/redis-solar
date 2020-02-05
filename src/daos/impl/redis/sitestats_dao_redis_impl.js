@@ -35,7 +35,6 @@ const remap = (siteStatsHash) => {
  */
 const findById = async (siteId, timestamp) => {
   const client = redis.getClient();
-
   const response = await client.hgetallAsync(
     keyGenerator.getSiteStatsKey(siteId, timestamp),
   );
@@ -51,6 +50,7 @@ const findById = async (siteId, timestamp) => {
  * @param {Object} meterReading - a meter reading object.
  * @returns {Promise} - promise that resolves when the operation is complete.
  */
+// test:sitestats_dao_redis_impl:sites:stats:2019-07-08:999
 const updateOptimized = async (meterReading) => {
   const client = redis.getClient();
   const key = keyGenerator.getSiteStatsKey(meterReading.siteId, meterReading.dateTime);
@@ -59,6 +59,38 @@ const updateOptimized = async (meterReading) => {
   await compareAndUpdateScript.load();
 
   // START Challenge #3
+  const transaction = client.multi();
+  transaction.hset(
+    key,
+    'lastReportingTime',
+    timeUtils.getCurrentTimestamp(),
+  );
+  transaction.hincrby(key, 'meterReadingCount', 1);
+  transaction.expire(key, weekSeconds);
+  transaction.hget(key, 'maxWhGenerated');
+  transaction.hget(key, 'minWhGenerated');
+  transaction.hget(key, 'maxCapacity');
+  await transaction.execAsync();
+  await client.evalshaAsync(
+    compareAndUpdateScript.updateIfGreater(
+      key,
+      'maxWhGenerated',
+      meterReading.whGenerated
+    )
+  )
+  await client.evalshaAsync(
+    compareAndUpdateScript.updateIfLess(
+      key,
+      'minWhGenerated',
+      meterReading.whGenerated
+    )
+  )
+  const readingCapacity = meterReading.whGenerated - meterReading.whUsed;
+  await client.evalshaAsync(
+    compareAndUpdateScript.updateIfGreater(
+      key, 'maxCapacity', readingCapacity
+    )
+  )
   // END Challenge #3
 };
 /* eslint-enable */
@@ -71,6 +103,7 @@ const updateOptimized = async (meterReading) => {
  * @param {Object} meterReading - a meter reading object.
  * @returns {Promise} - promise that resolves when the operation is complete.
  */
+// test:sitestats_dao_redis_impl:sites:stats:2019-07-08:999
 const updateBasic = async (meterReading) => {
   const client = redis.getClient();
   const key = keyGenerator.getSiteStatsKey(
@@ -95,7 +128,6 @@ const updateBasic = async (meterReading) => {
   if (minWh === null || meterReading.whGenerated < parseFloat(minWh)) {
     await client.hsetAsync(key, 'minWhGenerated', meterReading.whGenerated);
   }
-
   const maxCapacity = await client.hgetAsync(key, 'maxCapacity');
   const readingCapacity = meterReading.whGenerated - meterReading.whUsed;
   if (maxCapacity === null || readingCapacity > parseFloat(maxCapacity)) {
@@ -106,5 +138,7 @@ const updateBasic = async (meterReading) => {
 
 module.exports = {
   findById,
-  update: updateBasic, // updateOptimized
+  // update: updateBasic,
+  update: updateOptimized
+
 };
