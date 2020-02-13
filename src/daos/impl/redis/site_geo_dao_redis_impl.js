@@ -113,14 +113,14 @@ const findAll = async () => {
 
   const siteIds = await client.zrangeAsync(keyGenerator.getSiteGeoKey(), 0, -1);
   const sites = [];
-
+  const getSiteHashPipeline = client.batch();
   for (const siteId of siteIds) {
     const siteKey = keyGenerator.getSiteHashKey(siteId);
+    getSiteHashPipeline.hgetall(siteKey);
+  }
 
-    /* eslint-disable no-await-in-loop */
-    const siteHash = await client.hgetallAsync(siteKey);
-    /* eslint-enable */
-
+  const siteHashes = await getSiteHashPipeline.execAsync()
+  for (const siteHash of siteHashes) {
     if (siteHash) {
       // Call remap to remap the flat key/value representation
       // from the Redis hash into the site domain object format.
@@ -180,7 +180,6 @@ const findByGeo = async (lat, lng, radius, radiusUnit) => {
 const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
   /* eslint-disable no-unreachable */
   // Challenge #5, remove the next line...
-  return [];
 
   const client = redis.getClient();
 
@@ -205,6 +204,16 @@ const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
   const sitesInRadiusCapacitySortedSetKey = keyGenerator.getTemporaryKey();
 
   // START Challenge #5
+  const siteCapacityRankingKey = keyGenerator.getCapacityRankingKey()
+  await setOperationsPipeline.zinterstore(
+    sitesInRadiusCapacitySortedSetKey,
+    2,
+    sitesInRadiusSortedSetKey,
+    siteCapacityRankingKey,
+    'WEIGHTS',
+    0,
+    1
+    );
   // END Challenge #5
 
   // Expire the temporary sorted sets after 30 seconds, so that we
@@ -214,7 +223,7 @@ const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
 
   // Execute the set operations commands, we do not need to
   // use the responses.
-  await setOperationsPipeline.execAsync();
+  const result = await setOperationsPipeline.execAsync();
 
   // Get sites IDs with enough capacity from the temporary
   // sorted set and store them in siteIds.
@@ -223,6 +232,7 @@ const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
     capacityThreshold,
     '+inf',
   );
+
 
   // Populate array with site details, use pipeline for efficiency.
   const siteHashPipeline = client.batch();
