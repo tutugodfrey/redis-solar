@@ -83,6 +83,10 @@ const getRateLimiterKey = (name, interval, maxHits) => {
   return getKey(`limiter:${name}:${Math.floor(minuteOfDay / interval)}:${maxHits}`);
 };
 
+const getRateLimiterSlidingWindowKey = (name, windowSize, maxHits) => {
+  return getKey(`limiter:${name}:${windowSize}:${maxHits}`);
+};
+
 /**
  * Returns the Redis key used to store geo information for sites.
  *
@@ -176,6 +180,7 @@ module.exports = {
   getSiteIDsKey,
   getSiteStatsKey,
   getRateLimiterKey,
+  getRateLimiterSlidingWindowKey,
   getSiteGeoKey,
   getCapacityRankingKey,
   getTSKey,

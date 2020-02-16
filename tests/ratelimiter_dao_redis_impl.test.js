@@ -15,6 +15,7 @@ const client = redis.getClient();
 
 afterEach(async () => {
   const testKeys = await client.keysAsync(`${testKeyPrefix}:*`);
+  
 
   if (testKeys.length > 0) {
     await client.delAsync(testKeys);
@@ -54,9 +55,19 @@ test(`${testSuiteName}: hit (fixed window limit exceeded)`, async () => {
 });
 
 // Challenge 7.
-test.todo(`${testSuiteName}: hit (sliding window limit not exceeded)`);
+test(`${testSuiteName}: hit (sliding window limit not exceeded)`, async () => {
+  await runRateLimiter({
+    interval: 1,
+    maxHits: 5,
+  }, 5);
+});
 
 // Challenge 7.
-test.todo(`${testSuiteName}: hit (sliding window limit exceeded)`);
+test(`${testSuiteName}: hit (sliding window limit exceeded)`, async () => {
+  await runRateLimiter({
+    interval: 1,
+    maxHits: 5,
+  }, 7);
+});
 
 /* eslint-enable */
