@@ -1,0 +1,38 @@
+[
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "RediSolar"
+  },
+  {
+    "ParameterKey": "EnvironmentName",
+    "ParameterValue": "Dev"
+  },
+  {
+    "ParameterKey": "VpcCIDR",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "PublicCIDR",
+    "ParameterValue": "0.0.0.0/0"
+  },
+  {
+    "ParameterKey": "PublicSubnetACIDR",
+    "ParameterValue": "10.0.5.0/24"
+  },
+  {
+    "ParameterKey": "PrivateSubnetACIDR",
+    "ParameterValue": "10.0.2.0/24"
+  },
+  {
+    "ParameterKey": "PublicSubnetBCIDR",
+    "ParameterValue": "10.0.20.0/24"
+  },
+  {
+    "ParameterKey": "PrivateSubnetBCIDR",
+    "ParameterValue": "10.0.15.0/24"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "aws2-oregon-key"
+  }
+]
