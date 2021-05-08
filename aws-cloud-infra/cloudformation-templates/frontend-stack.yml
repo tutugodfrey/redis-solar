@@ -1,0 +1,100 @@
+Description: Manage Frontend of Redis Solar
+Parameters:
+  ProjectName:
+    Description: Project to which Stack is being applied
+    Type: String
+  EnvironmentName:
+    Description: Environment name to be used as prefixed to resources
+    Type: String
+  KeyName:
+    Description: SSH key Name
+    Type: String
+  ImageId:
+    Description: AMI Image Id for EC2 instance
+    Type: String
+  InstanceType:
+    Description: The Capability of your EC2 instance
+    Type: String
+  LaunchTemplateVersionNumber:
+    Description: Required version number for launch template use in auto scaling group
+    Type: String
+    Default: 1
+Resources:
+  WebServerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Web App Security Group
+      GroupName: !Sub ${ProjectName}-${EnvironmentName} Web Server SG 
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${ProjectName}-${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName} Web Server SG
+  
+  WebAppLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: WebAppLaunchTemplate
+      LaunchTemplateData:
+        ImageId:
+          Ref: ImageId
+        KeyName:
+          Ref: KeyName
+        InstanceType:
+          Ref: InstanceType
+        SecurityGroupIds:
+        - Ref: WebServerSecGroup
+        # BlockDeviceMappings:
+        # - DeviceName: "/dev/sdk"
+        #   Ebs:
+        #     VolumeSize: '10'
+        UserData:
+          Fn::Base64: !Sub |
+            #! /bin/bash
+            yum update -y;
+            yum install git -y;
+            amazon-linux-extras install nginx1 -y;
+            git clone https://github.com/tutugodfrey/redis-solar;
+            cd redis-solar;
+            cp -r public/* /usr/share/nginx/html/;
+            systemctl enable --now nginx;
+
+  
+  WebAppGroupWithLaunchTemplate:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+      - Fn::ImportValue:
+          !Sub "${ProjectName}-${EnvironmentName}-PUB-NETS"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebAppLaunchTemplate
+        Version: !Ref LaunchTemplateVersionNumber
+      MinSize: '1'
+      MaxSize: '3'
+      TargetGroupARNs:
+      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-WebAppTargetGroupARN
+      HealthCheckGracePeriod: 60
+      HealthCheckType: ELB
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-WebApp
+          PropagateAtLaunch: Yes
