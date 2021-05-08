@@ -68,7 +68,7 @@ Resources:
       CidrBlock: !Ref PrivateSubnetBCIDR
       Tags:
         - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetA
+          Value: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetB
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -137,29 +137,29 @@ Resources:
         Ref: PublicRouteTable
       DestinationCidrBlock: !Ref PublicCIDR
   
-  PrivateRouteTable1:
+  PrivateRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: moduleVPC
       Tags:
         - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-1
+          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-A
 
-  PrivateRouteTable2:
+  PrivateRouteTableB:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: moduleVPC
       Tags:
         - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-2
+          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-B
 
   PrivateRouteTableAssociation1:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: PrivateRouteTable1
+        Ref: PrivateRouteTableA
       SubnetId:
         Ref: PrivateSubnetA
 
@@ -167,7 +167,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: PrivateRouteTable2
+        Ref: PrivateRouteTableB
       SubnetId:
         Ref: PrivateSubnetB
 
@@ -208,6 +208,10 @@ Outputs:
     Value: !Ref moduleVPC
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-VPCID
+  VpcCIDR:
+    Value: !Ref VpcCIDR
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-VpcCIDR
 
   VPCPublicRouteTable:
     Description: Public Routing
@@ -215,17 +219,17 @@ Outputs:
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-RT
 
-  VPCPrivateRouteTable1:
-    Description: Private Routing AZ1
-    Value: !Ref PrivateRouteTable1
+  VPCPrivateRouteTableA:
+    Description: Private Routing AZ A
+    Value: !Ref PrivateRouteTableA
     Export: 
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI1-RT
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-A
   
-  VPCPrivateRouteTable2:
-    Description: Private Routing AZ2
-    Value: !Ref PrivateRouteTable2
+  VPCPrivateRouteTableB:
+    Description: Private Routing AZ B
+    Value: !Ref PrivateRouteTableB
     Export: 
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI2-RT
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-B
 
   PublicSubnetes:
     Description: A list of the public subnets
@@ -242,52 +246,52 @@ Outputs:
     Description: A reference to Public subnet in 1st AZ
     Value: !Ref PublicSubnetA
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB1-SN
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-A
 
   PublicSubnetB:
     Description: A reference to Public subnet in 2nd AZ
     Value: !Ref PublicSubnetB
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB2-SN
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-B
 
   PrivateSubnetA:
     Description: A reference to Private subnet in 1st AZ
     Value: !Ref PrivateSubnetA
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI1-SN
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-A
 
   PrivateSubnetB:
     Description: A reference to Private subnet in 2nd AZ
     Value: !Ref PrivateSubnetB
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI2-SN
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-B
 
   PublicSubnetAZone:
     Description: Availability zone of the Public subent A
     Value: !GetAtt PublicSubnetA.AvailabilityZone
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetAAZ
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-A
  
   PublicSubnetBZone:
     Description: Availability zone of the Public subent B
     Value:
       Fn::GetAtt: [ PublicSubnetB, AvailabilityZone ]
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetBAZ
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-B
 
   PrivateSubnetAZone:
     Description: Availability zone of the Private subent A
     Value:
       Fn::GetAtt: [ PrivateSubnetA, AvailabilityZone ]
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetAAZ
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SB-AZ-A
 
   PrivateSubnetBZone:
     Description: Availability zone of the Private subent B
     Value:
       Fn::GetAtt: [ PrivateSubnetB, AvailabilityZone ]
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetBAZ
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-AZ-B
 
   PrivateSubnetACIDR:
     Description: Cidr for Private Subnet A

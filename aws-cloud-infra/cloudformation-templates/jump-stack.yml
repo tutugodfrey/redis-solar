@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Jump server to serve as administrative interface to the Data center
+Parameters:
+  ProjectName:
+    Description: Project context stack is applied to.
+    Type: String
+  EnvironmentName:
+    Description: The environment context stack is use for.
+    Type: String
+  PublicCIDR:
+    Description: Public CIDR range
+    Type: String
+    Default: 0.0.0.0/0
+  ImageId:
+    Description: The Image Id for the server
+    Type: String
+  InstanceType:
+    Description: Instance capability type
+    Type: String
+  KeyName:
+    Description: SSH key name to login to the server
+    Type: String  
+Resources:
+  JumpServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG To control access to Jump Server
+      GroupName: !Sub ${ProjectName}-${EnvironmentName}-JumpServerSG
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref PublicCIDR
+      # Add rule that allow traffic from within the vpc
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp:
+          Fn::ImportValue:
+            !Sub ${ProjectName}-${EnvironmentName}-VpcCIDR
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Jump Server SG
+
+  JumpServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-A
+      AvailabilityZone:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-A
+      SecurityGroupIds:
+      - !Ref JumpServerSG
+      SourceDestCheck: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Jump-Server
+      UserData:
+        Fn::Base64: !Sub |
+          #! /bin/bash
+          echo Hello world! Jump Server is ready
