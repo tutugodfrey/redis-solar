@@ -1,0 +1,305 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  VPC For Deploying the 
+  Application
+Parameters:
+  ProjectName:
+    Description: Project template is been applied to.
+    Type: String
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resources
+    Type: String
+  VpcCIDR:
+    Description: IP range for our VPC (CIDR notation)
+    Type: String
+    Default: 10.0.0.0/16
+  PublicCIDR:
+    Type: String
+    Default: 0.0.0.0/0
+  PublicSubnetACIDR:
+    Type: String
+  PrivateSubnetACIDR:
+    Type: String
+  PublicSubnetBCIDR:
+    Type: String
+  PrivateSubnetBCIDR:
+    Type: String
+  KeyName:
+    Description: ec2 ssh key pair
+    Type: String
+  
+Resources:
+  moduleVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+      - Key: Name
+        Value: !Sub ${ProjectName}-${EnvironmentName}-VPC
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      VpcId:
+        Ref: moduleVPC
+      CidrBlock: !Ref PrivateSubnetACIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetA
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '']
+      VpcId:
+        Ref: moduleVPC
+      CidrBlock: !Ref PublicSubnetACIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetA
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      VpcId:
+        Ref: moduleVPC
+      CidrBlock: !Ref PrivateSubnetBCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetA
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      VpcId:
+        Ref: moduleVPC
+      CidrBlock: !Ref PublicSubnetBCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetB
+  InternetGateWay:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-IGW
+
+  InternetGateWayVPCAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: InternetGateWay
+      VpcId:
+        Ref: moduleVPC
+  
+  # DefaultPublicRoute:
+  #   Type: AWS::EC2::Route
+  #   DependsOn: InternetGateWayVPCAttachment
+  #   Properties:
+  #     RouteTableId: !Ref PublicRoutTable
+  #     DestinationCidrBlock: PublicCIDR
+  #     GatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: moduleVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-public-route-table
+
+  PublicRouteTableAssociationa:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnetA
+
+  PublicRouteTableAssociationb:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnetB
+
+  InternetGatewayPublicRouteAssociation:
+    Type: AWS::EC2::Route
+    Properties:
+      GatewayId:
+        Ref: InternetGateWay
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: !Ref PublicCIDR
+  
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: moduleVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: moduleVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-2
+
+  PrivateRouteTableAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      SubnetId:
+        Ref: PrivateSubnetA
+
+  PrivateRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      SubnetId:
+        Ref: PrivateSubnetB
+
+  WebAccessSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: moduleVPC
+      GroupName: WebAccess
+      GroupDescription: "Allow access on port 80"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Name
+          Value: WebAccessSG
+  
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        Ref: moduleVPC
+      GroupName: SSHAccess
+      GroupDescription: "Allow ssh access on port 22"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref PublicCIDR   
+      Tags:
+        - Key: Name
+          Value: SSH-SG
+
+Outputs:
+  VPCID:
+    Value: !Ref moduleVPC
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-VPCID
+
+  VPCPublicRouteTable:
+    Description: Public Routing
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-RT
+
+  VPCPrivateRouteTable1:
+    Description: Private Routing AZ1
+    Value: !Ref PrivateRouteTable1
+    Export: 
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI1-RT
+  
+  VPCPrivateRouteTable2:
+    Description: Private Routing AZ2
+    Value: !Ref PrivateRouteTable2
+    Export: 
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI2-RT
+
+  PublicSubnetes:
+    Description: A list of the public subnets
+    Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB ]]
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-NETS
+
+  PrivateSubnets:
+    Value: !Join [ ",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB ]]
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRIV-NETS
+
+  PublicSubnetA:
+    Description: A reference to Public subnet in 1st AZ
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB1-SN
+
+  PublicSubnetB:
+    Description: A reference to Public subnet in 2nd AZ
+    Value: !Ref PublicSubnetB
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB2-SN
+
+  PrivateSubnetA:
+    Description: A reference to Private subnet in 1st AZ
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI1-SN
+
+  PrivateSubnetB:
+    Description: A reference to Private subnet in 2nd AZ
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI2-SN
+
+  PublicSubnetAZone:
+    Description: Availability zone of the Public subent A
+    Value: !GetAtt PublicSubnetA.AvailabilityZone
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetAAZ
+ 
+  PublicSubnetBZone:
+    Description: Availability zone of the Public subent B
+    Value:
+      Fn::GetAtt: [ PublicSubnetB, AvailabilityZone ]
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetBAZ
+
+  PrivateSubnetAZone:
+    Description: Availability zone of the Private subent A
+    Value:
+      Fn::GetAtt: [ PrivateSubnetA, AvailabilityZone ]
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetAAZ
+
+  PrivateSubnetBZone:
+    Description: Availability zone of the Private subent B
+    Value:
+      Fn::GetAtt: [ PrivateSubnetB, AvailabilityZone ]
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetBAZ
+
+  PrivateSubnetACIDR:
+    Description: Cidr for Private Subnet A
+    Value:
+      Ref: PrivateSubnetACIDR
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-A-CIDR
+
+  PrivateSubnetBCIDR:
+    Description: Cidr for Private Subnet B
+    Value:
+      Ref: PrivateSubnetBCIDR
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-B-CIDR
+

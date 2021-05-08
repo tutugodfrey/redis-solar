@@ -120,3 +120,9 @@ To run the linter:
 ```
 npm run lint
 ```
+
+# Application Deployment
+
+Click on the link below for instructions on how to deploy the application
+
+[Deployment to AWS Cloud](aws-cloud-infra/README.md)
