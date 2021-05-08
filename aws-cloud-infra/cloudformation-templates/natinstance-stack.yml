@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  EC2 Nat Instances to handle traffic routing for private subnets.
+  Provision for high avialability
+Parameters:
+  ProjectName:
+    Description: The project the template is applied to.
+    Type: String 
+  EnvironmentName:
+    Description: An environment name that will prefix to resources
+    Type: String
+  PublicCIDR:
+    Description: Public CIDR range
+    Type: String
+    Default: 0.0.0.0/0
+  ImageId:
+    Description: Amazon AMI id
+    Type: String
+  InstanceType:
+    Description: Specify the Capability of EC2 Instance
+    Type: String
+  KeyName:
+    Description: SSH key file name
+    Type: String
+
+Resources:  
+  NatInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for Nat Instance, allow ingress from private subnets
+      GroupName: Nat Instance Security Group
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp:
+          Fn::ImportValue:
+            !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-A-CIDR
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp:
+          Fn::ImportValue:
+            !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-B-CIDR
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp:
+          Ref: PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
+  NATInstanceRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-PRI1-RT
+      DestinationCidrBlock:
+        Ref: PublicCIDR
+      InstanceId:
+        Ref: NATInstance1
+
+  NATInstanceRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-PRI2-RT
+      DestinationCidrBlock:
+        Ref: PublicCIDR
+      InstanceId:
+        Ref: NATInstance2
+ 
+  NATInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId:
+        Ref: ImageId
+      InstanceType:
+        Ref: InstanceType
+      KeyName: 
+        Ref: KeyName
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB1-SN
+      AvailabilityZone:
+        Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PublicSubnetAAZ
+      SourceDestCheck: false
+      SecurityGroupIds:
+      - Ref: NatInstanceSG
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatInstance1
+      UserData:
+        Fn::Base64: !Sub |
+          #! /bin/bash    
+          yum -y update
+          echo 1 > /proc/sys/net/ipv4/ip_forward
+          echo 0 > /proc/sys/net/ipv4/conf/eth0/send_redirects
+          /sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE
+          /sbin/iptables-save > /etc/sysconfig/iptables
+          mkdir -p /etc/sysctl.d/
+          cat <<EOF > /etc/sysctl.d/nat.conf
+          net.ipv4.ip_forward = 1
+          net.ipv4.conf.eth0.send_redirects = 0
+          EOF
+
+  NATInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId:
+        Ref: ImageId
+      InstanceType:
+        Ref: InstanceType
+      KeyName: 
+        Ref: KeyName
+      SubnetId:
+        Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB2-SN
+      AvailabilityZone:
+        Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PublicSubnetBAZ
+      SourceDestCheck: false
+      SecurityGroupIds:
+      - Ref: NatInstanceSG
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatInstance2
+      UserData:
+        Fn::Base64: !Sub |
+          #! /bin/bash
+          yum -y update
+          echo 1 > /proc/sys/net/ipv4/ip_forward
+          echo 0 > /proc/sys/net/ipv4/conf/eth0/send_redirects
+          /sbin/iptables -t nat -A POSTROUTING -o eth0 -s 0.0.0.0/0 -j MASQUERADE
+          /sbin/iptables-save > /etc/sysconfig/iptables
+          mkdir -p /etc/sysctl.d/
+          cat <<EOF > /etc/sysctl.d/nat.conf
+          net.ipv4.ip_forward = 1
+          net.ipv4.conf.eth0.send_redirects = 0
+          EOF
