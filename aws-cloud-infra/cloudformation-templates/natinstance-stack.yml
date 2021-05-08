@@ -59,7 +59,7 @@ Resources:
     Properties:
       RouteTableId:
         Fn::ImportValue:
-          !Sub ${ProjectName}-${EnvironmentName}-PRI1-RT
+          !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-A
       DestinationCidrBlock:
         Ref: PublicCIDR
       InstanceId:
@@ -70,7 +70,7 @@ Resources:
     Properties:
       RouteTableId:
         Fn::ImportValue:
-          !Sub ${ProjectName}-${EnvironmentName}-PRI2-RT
+          !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-B
       DestinationCidrBlock:
         Ref: PublicCIDR
       InstanceId:
@@ -87,10 +87,10 @@ Resources:
         Ref: KeyName
       SubnetId:
         Fn::ImportValue:
-          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB1-SN
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB-SN-A
       AvailabilityZone:
         Fn::ImportValue:
-          Fn::Sub: ${ProjectName}-${EnvironmentName}-PublicSubnetAAZ
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-A
       SourceDestCheck: false
       SecurityGroupIds:
       - Ref: NatInstanceSG
@@ -122,10 +122,10 @@ Resources:
         Ref: KeyName
       SubnetId:
         Fn::ImportValue:
-          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB2-SN
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB-SN-B
       AvailabilityZone:
         Fn::ImportValue:
-          Fn::Sub: ${ProjectName}-${EnvironmentName}-PublicSubnetBAZ
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-B
       SourceDestCheck: false
       SecurityGroupIds:
       - Ref: NatInstanceSG
