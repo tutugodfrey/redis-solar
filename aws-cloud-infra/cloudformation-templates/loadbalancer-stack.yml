@@ -85,6 +85,46 @@ Resources:
       VpcId:
         Fn::ImportValue:
           Fn::Sub: ${ProjectName}-${EnvironmentName}-VPCID
+
+  APPListeners:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: BackendAppTargetGroup
+      LoadBalancerArn:
+        Ref: WebAppLB
+      Port: 8081
+      Protocol: HTTP
+
+  APPALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref BackendAppTargetGroup
+      Conditions:
+      - Field: path-pattern
+        Values: [/api]
+      ListenerArn: !Ref APPListeners
+      Priority: 3
+
+  BackendAppTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /api
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
+      Port: 8081
+      Protocol: HTTP
+      UnhealthyThresholdCount: 10
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: ${ProjectName}-${EnvironmentName}-VPCID
+  
 Outputs:
   LBSecGroup:
     Description: SG of the Load Balancer
@@ -109,3 +149,9 @@ Outputs:
     Value: !Ref WebAppTargetGroup
     Export: 
       Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppTargetGroupARN
+
+  BackendAppTargetGroupARNs:
+    Description: ARN of the backend target
+    Value: !Ref BackendAppTargetGroup
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-BackendAppTargetGroupARN

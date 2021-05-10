@@ -98,3 +98,10 @@ Resources:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-WebApp
           PropagateAtLaunch: Yes
+
+Outputs:
+  WebAppSGID:
+    Description: Id of the Web app
+    Value: !GetAtt WebServerSecGroup.GroupId
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppSGID
