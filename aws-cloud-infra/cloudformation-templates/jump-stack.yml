@@ -21,35 +21,6 @@ Parameters:
     Description: SSH key name to login to the server
     Type: String  
 Resources:
-  JumpServerSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: SG To control access to Jump Server
-      GroupName: !Sub ${ProjectName}-${EnvironmentName}-JumpServerSG
-      VpcId:
-        Fn::ImportValue:
-          !Sub ${ProjectName}-${EnvironmentName}-VPCID
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: !Ref PublicCIDR
-      # Add rule that allow traffic from within the vpc
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp:
-          Fn::ImportValue:
-            !Sub ${ProjectName}-${EnvironmentName}-VpcCIDR
-      SecurityGroupEgress:
-      - IpProtocol: -1
-        FromPort: -1
-        ToPort: -1
-        CidrIp: !Ref PublicCIDR
-      Tags:
-        - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-Jump Server SG
-
   JumpServerInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -63,7 +34,7 @@ Resources:
         Fn::ImportValue:
           !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-A
       SecurityGroupIds:
-      - !Ref JumpServerSG
+      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-JumpServerSG
       SourceDestCheck: true
       Tags:
         - Key: Name

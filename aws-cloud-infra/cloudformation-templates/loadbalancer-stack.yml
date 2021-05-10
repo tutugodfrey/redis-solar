@@ -7,37 +7,8 @@ Parameters:
   EnvironmentName:
     Description: Environment context to which stack is been applied
     Type: String
-  PublicCIDR:
-    Description: Public Cidr Range
-    Type: String
-    Default: 0.0.0.0/0
-Resources:
-  LBSecGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Load Balancer SG
-      GroupName: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancer
-      VpcId:
-        Fn::ImportValue:
-          !Sub ${ProjectName}-${EnvironmentName}-VPCID
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: !Ref PublicCIDR
-      - IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
-        CidrIp: !Ref PublicCIDR
-      SecurityGroupEgress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: !Ref PublicCIDR
-      Tags:
-        - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancer SG
 
+Resources:
   WebAppLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -45,7 +16,7 @@ Resources:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-A
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-B
       SecurityGroups:
-      - Ref: LBSecGroup
+      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-LBSecGroup
   
   Listeners:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -126,12 +97,6 @@ Resources:
           Fn::Sub: ${ProjectName}-${EnvironmentName}-VPCID
   
 Outputs:
-  LBSecGroup:
-    Description: SG of the Load Balancer
-    Value: !Ref LBSecGroup
-    Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancer-SG
-
   LoadBalancerID:
     Description: ID or ARN of the Load Balancer
     Value: !Ref WebAppLB

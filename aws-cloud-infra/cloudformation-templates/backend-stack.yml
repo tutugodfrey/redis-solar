@@ -16,35 +16,7 @@ Parameters:
     Description: The Capability of your EC2 instance
     Type: String
 
-Resources:
-  AppServerSecGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: App Security Group
-      GroupName: !Sub ${ProjectName}-${EnvironmentName} App Server SG 
-      VpcId:
-        Fn::ImportValue:
-          !Sub "${ProjectName}-${EnvironmentName}-VPCID"
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 8081
-        ToPort: 8081
-        # CidrIp: 0.0.0.0/0  # From Web server security group
-        SourceSecurityGroupId:
-          Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-WebAppSGID
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: 0.0.0.0/0
-      SecurityGroupEgress:
-      - IpProtocol: tcp
-        FromPort: 0
-        ToPort: 65535
-        CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName} App Server SG
-  
+Resources:  
   BackendAppLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
@@ -52,7 +24,7 @@ Resources:
       KeyName: !Ref KeyName
       InstanceType: !Ref InstanceType
       SecurityGroups:
-      - Ref: AppServerSecGroup
+      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-BackendServerSG
       # BlockDeviceMappings:
       # - DeviceName: "/dev/sdk"
       #   Ebs:
