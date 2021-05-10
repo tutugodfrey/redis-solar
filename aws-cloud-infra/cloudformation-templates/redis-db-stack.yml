@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy A Redis Server on EC2 instance for Redis Solar
+Parameters:
+  ProjectName:
+    Description: The Project context that the stack is applied to.
+    Type: String
+  EnvironmentName: 
+    Description: Environment context the stack is applied to
+    Type: String
+  ImageId:
+    Description: EC2 Image ID to use
+    Type: String
+  InstanceType:
+    Description: Define the capacity of EC2 Image
+    Type: String
+  KeyName:
+    Description: SSH Key Pair name
+    Type: String
+  PublicCIDR:
+    Description: Public CIDR IP Block
+    Type: String
+    Default: 0.0.0.0/0
+Resources:
+  RedisServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-${EnvironmentName}-RedisServerSG
+      GroupDescription: !Sub ${ProjectName} ${EnvironmentName}-Redis Server SG
+      VpcId:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 6379
+        ToPort: 6379
+        CidrIp:
+          Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-VpcCIDR
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref PublicCIDR
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-RedisServer SG
+  RedisDBInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SubnetId:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-A
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-AZ-A
+      # NetworkInterfaces:
+      SecurityGroupIds:
+      - Ref: RedisServerSG
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Redis-Server
+      UserData:
+        Fn::Base64: !Sub |
+          #! /bin/bash
+          yum update -y;
+          yum install git -y;
+          git clone https://github.com/tutugodfrey/redis-solar;
+          cd redis-solar;
+          . ./deploy-redis-with-tls.sh;
+
+Outputs:
+  RedisServerPrivateIP:
+    Description: Private IP of redis server
+    Value:
+      Fn::GetAtt: [ RedisDBInstance, PrivateIp ]
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-RedisServer-PRI-IP
