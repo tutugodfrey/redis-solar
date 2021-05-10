@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Stack security group resource
+
+Parameters:
+  ProjectName:
+    Description:  Project to which Stack is being applied
+    Type: String
+  EnvironmentName:
+    Description: Environment name to be used as prefixed to resources
+    Type: String
+  PublicCIDR:
+    Description: Public IP CIDR range
+    Type: String
+    Default: 0.0.0.0/0
+
+Resources:
+  JumpServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG To control access to Jump Server
+      GroupName: !Sub ${ProjectName}-${EnvironmentName}-JumpServerSG
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref PublicCIDR
+      # Add rule that allow traffic from within the vpc
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp:
+          Fn::ImportValue:
+            !Sub ${ProjectName}-${EnvironmentName}-VpcCIDR
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Jump Server SG
+
+  LBSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Load Balancer SG
+      GroupName: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancer
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref PublicCIDR
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: !Ref PublicCIDR
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancer SG
+
+  WebServerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Web App Security Group
+      GroupName: !Sub ${ProjectName}-${EnvironmentName} Web Server SG 
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${ProjectName}-${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName} Web Server SG
+
+  BackendServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: App Security Group
+      GroupName: !Sub ${ProjectName}-${EnvironmentName} App Server SG 
+      VpcId:
+        Fn::ImportValue:
+          !Sub "${ProjectName}-${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 8081
+        ToPort: 8081
+        # CidrIp: 0.0.0.0/0  # From Web server security group
+        SourceSecurityGroupId: !Ref WebServerSecGroup
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName} App Server SG
+  
+  RedisServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-${EnvironmentName}-RedisServerSG
+      GroupDescription: !Sub ${ProjectName} ${EnvironmentName}-Redis Server SG
+      VpcId:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 6379
+        ToPort: 6379
+        CidrIp:
+          Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-VpcCIDR
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref PublicCIDR
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-RedisServer SG
+
+Outputs:
+  LBSecGroup:
+    Description: SG of the Load Balancer
+    Value: !GetAtt LBSecGroup.GroupId
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-LBSecGroup
+  
+  WebAppSGID:
+    Description: Id of the Web app
+    Value: !GetAtt WebServerSecGroup.GroupId
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppSGID
+  
+  JumpServerSG:
+    Description: SG to control access to jump server
+    Value: !GetAtt JumpServerSG.GroupId
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-JumpServerSG
+  
+  BackendServerSG:
+    Description: Output of Backend server SG
+    Value: !GetAtt BackendServerSG.GroupId
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-BackendServerSG
+  
+  RedisServerSG:
+    Description: ID of Redis DB Server SG
+    Value: !GetAtt RedisServerSG.GroupId
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-RedisServerSG
