@@ -284,7 +284,7 @@ Outputs:
     Value:
       Fn::GetAtt: [ PrivateSubnetA, AvailabilityZone ]
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SB-AZ-A
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-AZ-A
 
   PrivateSubnetBZone:
     Description: Availability zone of the Private subent B
