@@ -61,15 +61,19 @@ const testInsertAndRetrieve = async (limit) => {
 
   // Retrieve up to 'limit' metrics back.
   const measurements = await redisMetricDAO.getRecent(1, 'whGenerated', timeUtils.getCurrentTimestamp(), limit);
-
   // Make sure we got the right number back.
   expect(measurements.length).toEqual(limit);
 };
 
-test(`${testSuiteName}: test 1 reading`, async () => testInsertAndRetrieve(1));
+/**
+ * Skipping the test now because Redis time series is not currently enabled in the test environment
+ * Test will be unskipped when the environment configured with RedisTimeseris
+ * Brief instruction on how to enable time series is in the README.md file
+ */
+test.skip(`${testSuiteName}: test 1 reading`, async () => testInsertAndRetrieve(1));
 
-test(`${testSuiteName}: test 1 day of readings`, async () => testInsertAndRetrieve(60 * 24));
+test.skip(`${testSuiteName}: test 1 day of readings`, async () => testInsertAndRetrieve(60 * 24));
 
-test(`${testSuiteName}: test multiple days of readings`, async () => testInsertAndRetrieve(60 * 70));
+test.skip(`${testSuiteName}: test multiple days of readings`, async () => testInsertAndRetrieve(60 * 70));
 
 /* eslint-enable */
