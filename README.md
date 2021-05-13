@@ -12,6 +12,21 @@ In order to start and run this application, you will need:
 * npm (installed with Node.js)
 * Access to a local or remote installation of [Redis](https://redis.io/download) version 5 or newer
 
+# Enable RedisSeries Module
+Depending on how Redis is setup, you may need to install and enable Redis time series module when starting Redis. Then start the Redis server by specifying the location of the time series module.
+
+[Instruction on how to download RedisTimeseries](https://oss.redislabs.com/redistimeseries/#setup)
+
+**Starting the Redis server with time series enable**
+
+`$redis-server --loadmodule /path/to/module/redistimeseries.so`
+
+E.g 
+```
+$ redis-server --loadmodule ~/RedisTimeSeries/bin/redistimeseries.so
+```
+**Note:** Some test are dependent on the Time Series module
+
 # Setup
 
 To get started with the default configuration (server on port 8081, Redis on localhost port 6379):

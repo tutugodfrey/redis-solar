@@ -22,7 +22,7 @@ commands:
           when: on_fail
           command: |
             # run cloudformation delete_stack command here.
-            aws cloudformation list-stack
+            aws cloudformation list-stacks
 
 orbs:
   # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
@@ -49,10 +49,13 @@ jobs:
       - run:
           name: Run test
           command: |
+            ls /etc/redis/
+            ls /usr/local/bin/
             export NODE_TLS_REJECT_UNAUTHORIZED='0'
             /usr/local/bin/redis-server /etc/redis/redis.conf &
             echo $NODE_TLS_REJECT_UNAUTHORIZED
-            echo running here npm test;
+            ps aux
+            npm test;
 
   analyze:
     <<: *defaults
