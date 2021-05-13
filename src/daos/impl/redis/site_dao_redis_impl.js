@@ -101,12 +101,13 @@ const findAll = async () => {
   const siteMemberIds = keyGenerator.getSiteIDsKey();
   const siteMembers = await client.smembersAsync(siteMemberIds);
 
-  const hashedSiteMembers = siteMembers.map(async siteMember => {
+  const hashedSiteMembers = siteMembers.map(async (siteMember) => {
     const siteHash = await client.hgetallAsync(siteMember);
     return remap(siteHash);
   });
 
-  return await Promise.all(hashedSiteMembers);
+  const result = await Promise.all(hashedSiteMembers);
+  return result;
 };
 /* eslint-enable */
 

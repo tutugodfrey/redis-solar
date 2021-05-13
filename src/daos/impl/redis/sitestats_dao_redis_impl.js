@@ -75,22 +75,22 @@ const updateOptimized = async (meterReading) => {
     compareAndUpdateScript.updateIfGreater(
       key,
       'maxWhGenerated',
-      meterReading.whGenerated
-    )
-  )
+      meterReading.whGenerated,
+    ),
+  );
   await client.evalshaAsync(
     compareAndUpdateScript.updateIfLess(
       key,
       'minWhGenerated',
-      meterReading.whGenerated
-    )
-  )
+      meterReading.whGenerated,
+    ),
+  );
   const readingCapacity = meterReading.whGenerated - meterReading.whUsed;
   await client.evalshaAsync(
     compareAndUpdateScript.updateIfGreater(
-      key, 'maxCapacity', readingCapacity
-    )
-  )
+      key, 'maxCapacity', readingCapacity,
+    ),
+  );
   // END Challenge #3
 };
 /* eslint-enable */
@@ -139,6 +139,6 @@ const updateBasic = async (meterReading) => {
 module.exports = {
   findById,
   // update: updateBasic,
-  update: updateOptimized
+  update: updateOptimized,
 
 };
