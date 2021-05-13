@@ -22,7 +22,8 @@ commands:
           when: on_fail
           command: |
             # run cloudformation delete_stack command here.
-            aws cloudformation list-stacks
+            export TERM=xterm-color
+            aws cloudformation list-stacks # using this as placeholder command for now
 
 orbs:
   # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
@@ -49,12 +50,8 @@ jobs:
       - run:
           name: Run test
           command: |
-            ls /etc/redis/
-            ls /usr/local/bin/
             export NODE_TLS_REJECT_UNAUTHORIZED='0'
             /usr/local/bin/redis-server /etc/redis/redis.conf &
-            echo $NODE_TLS_REJECT_UNAUTHORIZED
-            ps aux
             npm test;
 
   analyze:
@@ -62,10 +59,9 @@ jobs:
     steps:
       - checkout
       - node/install-packages
-      - run: pwd; ls -al
       - run:
           name: Security Audit with npm audit
-          command: echo npm audit;
+          command: echo Pending npm audit;
   
   provision_infrastructure:
     docker:
@@ -74,10 +70,11 @@ jobs:
       - checkout
       - run:
           name: Executu CloudFormation template
-          command:
+          command: |
+            echo $TERM
+            export TERM=xterm-color
             cd aws-cloud-infra/cloudformation-templates/
-            pwd
-            echo ./deploy_stack.sh
+            ./deploy-stacks.sh
   
   configure_infrastructure:
     <<: *noderedis
@@ -97,6 +94,7 @@ jobs:
       - run:
           name: Curl the Application to get response
           command: |
+            export TERM=xterm-color
             URL=http://google.com
             if curl -s --head ${URL}; then
               # success
@@ -106,7 +104,7 @@ jobs:
               exit 1
             fi
         # Rollback if deployment fails
-      - run: return 1
+      - run: exit 1
       - destroy_environment
 
 workflows:
