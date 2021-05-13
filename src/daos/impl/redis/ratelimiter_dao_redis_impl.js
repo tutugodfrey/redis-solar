@@ -16,6 +16,7 @@ const keyGenerator = require('./redis_key_generator');
   *
   * @private
   */
+/* eslint-disable no-unused-vars */
 const hitFixedWindow = async (name, opts) => {
   const client = redis.getClient();
   const key = keyGenerator.getRateLimiterKey(name, opts.interval, opts.maxHits);
@@ -47,7 +48,7 @@ const hitSlidingWindow = async (name, opts) => {
   const client = redis.getClient();
 
   // START Challenge #7
-  const windowSize = opts.interval*60*1000;
+  const windowSize = opts.interval * 60 * 1000;
   const currentTimeStamp = Date.now();
   const setMember = `${currentTimeStamp}-${Math.random()}`;
   const keyName = keyGenerator.getRateLimiterSlidingWindowKey(name, windowSize, opts.maxHits);
@@ -56,16 +57,15 @@ const hitSlidingWindow = async (name, opts) => {
   limitTransaction.zremrangebyscore(keyName, '-inf', Date.now() - windowSize);
   limitTransaction.zcard(keyName);
 
-  limitTransaction.expire(keyName, opts.interval*60)
+  limitTransaction.expire(keyName, opts.interval * 60);
   const result = await limitTransaction.execAsync();
   if (result[2] >= opts.maxHits) {
-    return 0
-  } else {
-    return opts.maxHits - result[2];
+    return 0;
   }
+  return opts.maxHits - result[2];
+
 
   // END Challenge #7
-  
 };
 /* eslint-enable */
 
@@ -84,6 +84,6 @@ module.exports = {
    *   or 0 if the rate limit has been exceeded..
    */
   // hit: hitFixedWindow, // Challenge 7: change to hitSlidingWindow
-  hit: hitSlidingWindow
+  hit: hitSlidingWindow,
 
 };

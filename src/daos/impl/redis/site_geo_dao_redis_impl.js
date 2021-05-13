@@ -119,7 +119,7 @@ const findAll = async () => {
     getSiteHashPipeline.hgetall(siteKey);
   }
 
-  const siteHashes = await getSiteHashPipeline.execAsync()
+  const siteHashes = await getSiteHashPipeline.execAsync();
   for (const siteHash of siteHashes) {
     if (siteHash) {
       // Call remap to remap the flat key/value representation
@@ -204,7 +204,7 @@ const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
   const sitesInRadiusCapacitySortedSetKey = keyGenerator.getTemporaryKey();
 
   // START Challenge #5
-  const siteCapacityRankingKey = keyGenerator.getCapacityRankingKey()
+  const siteCapacityRankingKey = keyGenerator.getCapacityRankingKey();
   await setOperationsPipeline.zinterstore(
     sitesInRadiusCapacitySortedSetKey,
     2,
@@ -212,8 +212,8 @@ const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
     siteCapacityRankingKey,
     'WEIGHTS',
     0,
-    1
-    );
+    1,
+  );
   // END Challenge #5
 
   // Expire the temporary sorted sets after 30 seconds, so that we
@@ -223,7 +223,7 @@ const findByGeoWithExcessCapacity = async (lat, lng, radius, radiusUnit) => {
 
   // Execute the set operations commands, we do not need to
   // use the responses.
-  const result = await setOperationsPipeline.execAsync();
+  await setOperationsPipeline.execAsync();
 
   // Get sites IDs with enough capacity from the temporary
   // sorted set and store them in siteIds.

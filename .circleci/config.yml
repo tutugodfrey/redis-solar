@@ -39,7 +39,7 @@ jobs:
       - node/install-packages
       - run:
           name: Run Lint
-          command: echo npm run lint;
+          command: npm run lint;
 
   test:
     <<: *noderedis
@@ -97,10 +97,10 @@ jobs:
             URL=http://google.com
             if curl -s --head ${URL}; then
               # success
-              return 0
+              exit 0
             else
               # fails
-              return 1
+              exit 1
             fi
         # Rollback if deployment fails
       - run: return 1

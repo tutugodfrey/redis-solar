@@ -15,7 +15,7 @@ const client = redis.getClient();
 
 afterEach(async () => {
   const testKeys = await client.keysAsync(`${testKeyPrefix}:*`);
-  
+
 
   if (testKeys.length > 0) {
     await client.delAsync(testKeys);
