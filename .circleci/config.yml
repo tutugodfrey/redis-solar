@@ -1,0 +1,125 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine. 
+# See: https://circleci.com/docs/2.0/configuration-reference
+
+version: 2.1
+
+defaults: &defaults
+  docker:
+    - image: circleci/node:13.8.0
+  working_directory: ~/project
+
+# Using my custom redis image with node.js installed
+noderedis: &noderedis
+  docker:
+    - image: tutug/node-redis
+ 
+
+commands:
+  destroy_environment:
+    steps:
+      - run:
+          name: Destroy environment when deployment fails
+          when: on_fail
+          command: |
+            # run cloudformation delete_stack command here.
+            aws cloudformation list-stack
+
+orbs:
+  # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
+  # Orbs reduce the amount of configuration required for common tasks. 
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/node
+  node: circleci/node@4.1
+
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          name: Run Lint
+          command: echo npm run lint;
+
+  test:
+    <<: *noderedis
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          name: Run test
+          command: |
+            export NODE_TLS_REJECT_UNAUTHORIZED='0'
+            /usr/local/bin/redis-server /etc/redis/redis.conf &
+            echo $NODE_TLS_REJECT_UNAUTHORIZED
+            echo running here npm test;
+
+  analyze:
+    <<: *defaults
+    steps:
+      - checkout
+      - node/install-packages
+      - run: pwd; ls -al
+      - run:
+          name: Security Audit with npm audit
+          command: echo npm audit;
+  
+  provision_infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Executu CloudFormation template
+          command:
+            cd aws-cloud-infra/cloudformation-templates/
+            pwd
+            echo ./deploy_stack.sh
+  
+  configure_infrastructure:
+    <<: *noderedis
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: [YOUR_SSH_FINGER_PRINT_HERE]
+      - run:
+          name: Run playbook to configure and start the server
+          command:
+            echo running ansible-playbook -i inventory playbook.yml # work in progress
+  
+  smoke_test:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - run:
+          name: Curl the Application to get response
+          command: |
+            URL=http://google.com
+            if curl -s --head ${URL}; then
+              # success
+              return 0
+            else
+              # fails
+              return 1
+            fi
+        # Rollback if deployment fails
+      - run: return 1
+      - destroy_environment
+
+workflows:
+  default: 
+    jobs:
+      - build
+      - test:
+          requires: [build]
+      - analyze:
+         requires:  [test]
+      - provision_infrastructure:
+          requires: [build, test, analyze]
+          filters:
+            branches:
+              only: [develop]
+      - configure_infrastructure:
+          requires: [provision_infrastructure]
+      - smoke_test:
+          requires: [configure_infrastructure]
