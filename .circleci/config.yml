@@ -6,12 +6,13 @@ version: 2.1
 defaults: &defaults
   docker:
     - image: circleci/node:13.8.0
-  working_directory: ~/project
+  working_directory: ~/redis-solar
 
 # Using my customized centos image packed with redis and node.js installed and configured
 noderedis: &noderedis
   docker:
     - image: tutug/node-redis
+  working_directory: ~/redis-solar
  
 
 commands:
@@ -27,8 +28,8 @@ commands:
           command: |
             # run cloudformation delete_stack command here.
             export TERM=xterm-color
-            pwd
-            cd  ~/project/aws-cloud-infra/cloudformation-templates/
+            cd  ./aws-cloud-infra/cloudformation-templates/
+            ls -al
             . ./stack-helper.sh
             describe_stack redis-solar-vpc-stack  # using this as placeholder command for now
             describe_stack loadbalancer-stack
@@ -78,7 +79,8 @@ jobs:
       - node/install-packages
       - run:
           name: Security Audit with npm audit
-          command: echo Pending npm audit;
+          command: |
+            echo Pending npm audit;
   
   provision_infrastructure:
     docker:
@@ -89,7 +91,7 @@ jobs:
           name: Executu CloudFormation template to deploy the infrastructe
           command: |
             export TERM=xterm-color
-            cd aws-cloud-infra/cloudformation-templates/
+            cd ./aws-cloud-infra/cloudformation-templates/
             ./deploy-stacks.sh
   
   configure_infrastructure:
@@ -107,10 +109,13 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
+      - checkout
       - run:
           name: Curl the Application to get response
           command: |
             export TERM=xterm-color
+            pwd
+            ls -al
             URL=http://google.com
             if curl -s --head ${URL}; then
               # success
