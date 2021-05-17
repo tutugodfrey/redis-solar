@@ -151,4 +151,4 @@ Click on the link below for instructions on how to deploy the application
 
 
 ---
-**Discliamer:** I (Tutu Godfrey) did not build the application from ground up. My initial contact with this application occur while  I was taking the Redis for Javascript developers course from Redis University. However, the application has provided a basis for me to develop and build on other skills. For example, I Developing and demonstrating my DevOps Expertise by building various infrastructure that can serve as Deployment platform for the application.
+**Discliamer:** I (Tutu Godfrey), did not build the application from ground up. My initial contact with this application occur while  I was taking the Redis for Javascript developers course from Redis University. However, the application has provided a basis for me to develop and build on other skills. For example, I am developing and demonstrating my DevOps expertise by building various infrastructure that can serve as Deployment platform for the application.
