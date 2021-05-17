@@ -2,7 +2,13 @@
 
 # Introduction
 
-This is the sample application codebase for RU102JS, Redis for JavaScript developers.
+This is a simple application that uses Redis as a backend Database for Solar sites monitoring system.
+
+---
+
+[![CircleCI](https://circleci.com/gh/tutugodfrey/redis-solar.svg?style=svg)](https://circleci.com/gh/tutugodfrey/redis-solar)
+
+---
 
 # Prerequisites
 
@@ -141,3 +147,8 @@ npm run lint
 Click on the link below for instructions on how to deploy the application
 
 [Deployment to AWS Cloud](aws-cloud-infra/README.md)
+
+
+
+---
+**Discliamer:** I (Tutu Godfrey) did not build the application from ground up. My initial contact with this application occur while  I was taking the Redis for Javascript developers course from Redis University. However, the application has provided a basis for me to develop and build on other skills. For example, I Developing and demonstrating my DevOps Expertise by building various infrastructure that can serve as Deployment platform for the application.
