@@ -13,7 +13,8 @@
     "lint": "./node_modules/eslint/bin/eslint.js src tests",
     "start": "node ./src/app.js",
     "test": "jest --no-colors",
-    "testdev": "jest --watch"
+    "testdev": "jest --watch",
+    "redisserver": "redis-server --loadmodule ~/RedisTimeSeries/bin/redistimeseries.so"
   },
   "author": "Redis Labs",
   "engines": {

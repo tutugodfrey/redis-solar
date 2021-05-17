@@ -8,7 +8,7 @@ defaults: &defaults
     - image: circleci/node:13.8.0
   working_directory: ~/project
 
-# Using my custom redis image with node.js installed
+# Using my customized centos image packed with redis and node.js installed and configured
 noderedis: &noderedis
   docker:
     - image: tutug/node-redis
@@ -18,12 +18,29 @@ commands:
   destroy_environment:
     steps:
       - run:
+          ## Here we want to destroy the infrastructure provisions
+          ## However, I am using describe stack for now because the I am still building the infrastructure
+          ## And would need to monitor and understand any failure that would occur
+          ## would delete from my terminal afterword
           name: Destroy environment when deployment fails
           when: on_fail
           command: |
             # run cloudformation delete_stack command here.
             export TERM=xterm-color
-            aws cloudformation list-stacks # using this as placeholder command for now
+            pwd
+            cd  ~/project/aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            describe_stack redis-solar-vpc-stack  # using this as placeholder command for now
+            describe_stack loadbalancer-stack
+      - run:
+          name: Pipeline Success
+          command: |
+            echo """
+              If you see this message, then the Pipeline has run successfully, Congrate!
+              Inspect the workflow to see what the Pipeline does.
+            """
+            
+            
 
 orbs:
   # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
@@ -69,9 +86,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Executu CloudFormation template
+          name: Executu CloudFormation template to deploy the infrastructe
           command: |
-            echo $TERM
             export TERM=xterm-color
             cd aws-cloud-infra/cloudformation-templates/
             ./deploy-stacks.sh
@@ -104,7 +120,7 @@ jobs:
               exit 1
             fi
         # Rollback if deployment fails
-      - run: exit 1
+      - run: exit 1 # Delibrately initiating failure here
       - destroy_environment
 
 workflows:

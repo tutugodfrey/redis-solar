@@ -94,14 +94,6 @@ Resources:
         Ref: InternetGateWay
       VpcId:
         Ref: moduleVPC
-  
-  # DefaultPublicRoute:
-  #   Type: AWS::EC2::Route
-  #   DependsOn: InternetGateWayVPCAttachment
-  #   Properties:
-  #     RouteTableId: !Ref PublicRoutTable
-  #     DestinationCidrBlock: PublicCIDR
-  #     GatewayId: !Ref InternetGateway
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -170,38 +162,6 @@ Resources:
         Ref: PrivateRouteTableB
       SubnetId:
         Ref: PrivateSubnetB
-
-  WebAccessSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId:
-        Ref: moduleVPC
-      GroupName: WebAccess
-      GroupDescription: "Allow access on port 80"
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: !Ref PublicCIDR
-      Tags:
-        - Key: Name
-          Value: WebAccessSG
-  
-  SSHSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      VpcId:
-        Ref: moduleVPC
-      GroupName: SSHAccess
-      GroupDescription: "Allow ssh access on port 22"
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: !Ref PublicCIDR   
-      Tags:
-        - Key: Name
-          Value: SSH-SG
 
 Outputs:
   VPCID:
