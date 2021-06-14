@@ -31,8 +31,11 @@ commands:
             cd  ./aws-cloud-infra/cloudformation-templates/
             ls -al
             . ./stack-helper.sh
-            describe_stack redis-solar-vpc-stack  # using this as placeholder command for now
-            describe_stack loadbalancer-stack
+            delete_stack frontend-stack;
+            delete_stack backend-stack;
+            sleep 150
+            delete_stack loadbalancer-stack;
+
       - run:
           name: Pipeline Success
           command: |
@@ -40,8 +43,6 @@ commands:
               If you see this message, then the Pipeline has run successfully, Congrate!
               Inspect the workflow to see what the Pipeline does.
             """
-            
-            
 
 orbs:
   # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
@@ -92,7 +93,12 @@ jobs:
           command: |
             export TERM=xterm-color
             cd ./aws-cloud-infra/cloudformation-templates/
-            ./deploy-stacks.sh
+            . ./stack-helper.sh
+            create_stack loadbalancer-stack loadbalancer-stack.yml loadbalancer-parameters.json;
+            sleep 200;
+            create_stack frontend-stack frontend-stack.yml frontend-parameters.json;
+            create_stack backend-stack backend-stack.yml backend-parameter.json;
+      - destroy_environment
   
   configure_infrastructure:
     <<: *noderedis
@@ -115,18 +121,15 @@ jobs:
           command: |
             export TERM=xterm-color
             pwd
-            ls -al
-            URL=http://google.com
-            if curl -s --head ${URL}; then
-              # success
-              exit 0
-            else
-              # fails
-              exit 1
-            fi
-        # Rollback if deployment fails
-      - run: exit 1 # Delibrately initiating failure here
-      - destroy_environment
+            export LB_URL=$(aws cloudformation describe-stacks --stack-name loadbalancer-stack --query "Stacks[*].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text);
+            counter=0;
+            echo $LB_URL
+            until curl -s --head http://${LB_URL} || [ $counter -gt 20 ]; do
+              echo Waiting for application to respond
+              sleep 3;
+              ((counter++));
+            done
+      - destroy_environment # Rollback if deployment fails
 
 workflows:
   default: 
@@ -140,7 +143,7 @@ workflows:
           requires: [build, test, analyze]
           filters:
             branches:
-              only: [develop]
+              only: [develop, fix-issue-with-starting-app]
       - configure_infrastructure:
           requires: [provision_infrastructure]
       - smoke_test:
