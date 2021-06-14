@@ -86,7 +86,9 @@ sed -i '/# tls-auth-clients no/a tls-auth-clients no' /etc/redis/redis.conf;
 # sed -i '/# tls-protocols /a tls-protocols "TLSv1.2 TLSv1.3"' /etc/redis/redis.conf;
 sed -i '/tls-protocols /a tls-protocols "TLSv1.2"' /etc/redis/redis.conf;
 sed -i '/# tls-ciphersuites /a tls-ciphersuites TLS_CHACHA20_POLY1305_SHA256' /etc/redis/redis.conf;
-sed -i '/# tls-prefer-server-ciphers yes/a tls-prefer-server-ciphers no' /etc/redis/redis.conf
+sed -i '/# tls-prefer-server-ciphers yes/a tls-prefer-server-ciphers no' /etc/redis/redis.conf;
+sed -i 's/protected-mode yes/protected-mode no/' /etc/redis/redis.conf;
+sed -i 's/^bind 127.0.0.1\>/# bind 127.0.0.1/' /etc/redis/redis.conf; # Allow redis to accept external connection
 
 
 # Reload systemd and start redis.service

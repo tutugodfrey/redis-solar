@@ -43,8 +43,11 @@ Resources:
           cd redis-solar;
           npm install;
           # We're running redis with TLS enabled with self-signed cert
-          # Disabling certificate verification
+          sed  -i 's/localhost/10.0.2.37/' config.json
+          sed -i '/dataStores.redis.port/a \ \ tls: {}' src/daos/impl/redis/redis_client.js
+          # Disabling certificate verification for self-signed cert
           export NODE_TLS_REJECT_UNAUTHORIZED='0'
+          npm run load src/resources/data/sites.json flushdb # optional flushdb
           npm start;
   
   BackendAppGroup:
