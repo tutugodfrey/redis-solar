@@ -61,7 +61,7 @@ Resources:
           npm install;
           export AWS_REGION=us-west-2
           # We're running redis with TLS enabled with self-signed cert
-          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-db-stack --region $AWS_REGION --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
+          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-solar-redis-db --region $AWS_REGION --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
           echo DB_ADDRESS is $DB_HOST
           sed  -i "s/localhost/$DB_HOST/" config.json
           sed -i '/dataStores.redis.port/a \ \ tls: {}' src/daos/impl/redis/redis_client.js

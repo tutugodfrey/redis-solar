@@ -126,6 +126,62 @@ jobs:
               ((counter++));
             done
       - destroy_environment # Rollback if deployment fails
+  
+  promote_to_production:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+
+      - run:
+         name: Install Dependencies
+         command: |
+           yum install -y tar gzip;
+
+      - run:
+          name: Get Old WorkflowId
+          command: |
+            OldWorkflowId=$(aws cloudformation describe-stacks --stack-name redis-solar-cloudfront --query "Stacks[*].Outputs[?OutputKey=='WorkflowId'].OutputValue" --output text);
+            echo OldWorkflowId=$OldWorkflowId >> ~/.env;
+            echo OLD ID $(cat .env)
+      
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - .env
+      - run:
+          name: Update cloud origin with loadbalancer url
+          command: |
+            cd ./aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            deploy_stack redis-solar-cloudfront cloudfront.yml WorkflowId=${CIRCLE_WORKFLOW_ID}
+
+      - destroy_environment # Rollback on failure 
+
+  cleanup_old_environment:
+    docker:
+      - image: amazon/aws-cli
+
+    steps:
+      - checkout
+
+      - run:
+         name: Install Dependencies
+         command: |
+           yum install -y tar gzip;
+
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: clean up
+          command: |
+            # clean up old environment
+            cd ./aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            export "$(grep OldWorkflowId ~/.env)"
+            delete_stack backend-stack-${OldWorkflowId};
+            sleep 150
+            delete_stack loadbalancer-stack-${OldWorkflowId}
 
 workflows:
   default: 
@@ -139,8 +195,12 @@ workflows:
           requires: [build, test, analyze]
           filters:
             branches:
-              only: [develop, update-app-configuration]
+              only: [develop, add-cloudfront]
       - configure_infrastructure:
           requires: [provision_infrastructure]
       - smoke_test:
           requires: [configure_infrastructure]
+      - promote_to_production:
+          requires: [smoke_test]
+      - cleanup_old_environment:
+          requires: [promote_to_production]
