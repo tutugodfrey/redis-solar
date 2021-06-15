@@ -253,6 +253,20 @@ Outputs:
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-AZ-B
 
+  PublicSubnetACIDR:
+    Description: Cidr for Private Subnet A
+    Value:
+      Ref: PublicSubnetACIDR
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-A-CIDR
+
+  PublicSubnetBCIDR:
+    Description: Cidr for Private Subnet B
+    Value:
+      Ref: PublicSubnetBCIDR
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-B-CIDR
+
   PrivateSubnetACIDR:
     Description: Cidr for Private Subnet A
     Value:

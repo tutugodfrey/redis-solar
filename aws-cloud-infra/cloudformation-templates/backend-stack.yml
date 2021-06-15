@@ -3,18 +3,36 @@ Parameters:
   ProjectName:
     Description: Project to which Stack is being applied
     Type: String
+    Default: RediSolar
   EnvironmentName:
     Description: Environment name to be used as prefixed to resources
     Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
   KeyName:
     Description: SSH key Name
     Type: String
+    Default: aws2-oregon-key
   ImageId:
     Description: AMI Image Id for EC2 instance
     Type: String
+    Default: ami-0e999cbd62129e3b1 # us-west-2 (Oregon) Amazon Linux 2 Image
+    AllowedValues:
+    - ami-0e999cbd62129e3b1 # us-west-2 (Oregon) Amazon Linux 2 AMI
+    - ami-03368e982f317ae48 # us-east-1 (N. Virgina) Amazon Linux 2 AMI
   InstanceType:
     Description: The Capability of your EC2 instance
     Type: String
+    Default: t2.micro
+  WorkflowId:
+    Description: >
+     An ID to uniquely Identifier the resource
+     created each time the stack is run
+    Type: String
+    Default: 1
 
 Resources:  
   BackendAppLaunchConfig:
@@ -23,15 +41,14 @@ Resources:
       ImageId: !Ref ImageId
       KeyName: !Ref KeyName
       InstanceType: !Ref InstanceType
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-Instance-Profile-ARN
       SecurityGroups:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-BackendServerSG
-      # BlockDeviceMappings:
-      # - DeviceName: "/dev/sdk"
-      #   Ebs:
-      #     VolumeSize: '10'
       UserData:
         Fn::Base64: !Sub |
           #! /bin/bash
+          
           yum update -y;
           yum install git -y;
           amazon-linux-extras install nginx1 -y;
@@ -42,8 +59,11 @@ Resources:
           git clone https://github.com/tutugodfrey/redis-solar;
           cd redis-solar;
           npm install;
+          export AWS_REGION=us-west-2
           # We're running redis with TLS enabled with self-signed cert
-          sed  -i 's/localhost/10.0.2.37/' config.json
+          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-db-stack --region $AWS_REGION --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
+          echo DB_ADDRESS is $DB_HOST
+          sed  -i "s/localhost/$DB_HOST/" config.json
           sed -i '/dataStores.redis.port/a \ \ tls: {}' src/daos/impl/redis/redis_client.js
           # Disabling certificate verification for self-signed cert
           export NODE_TLS_REJECT_UNAUTHORIZED='0'
@@ -55,17 +75,19 @@ Resources:
     Properties:
       VPCZoneIdentifier:
       - Fn::ImportValue:
-          !Sub "${ProjectName}-${EnvironmentName}-PUB-NETS" # Temporarily using the public subnet
-          # !Sub "${ProjectName}-${EnvironmentName}-PRI-NETS" # Launching in the private subnets
+          !Sub "${ProjectName}-${EnvironmentName}-PUB-NETS"
       LaunchConfigurationName:
         !Ref BackendAppLaunchConfig
       MinSize: '1'
       MaxSize: '3'
       TargetGroupARNs:
-      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-BackendAppTargetGroupARN # Define this target
+      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-BackendAppTargetGroupARN # Define this target
       HealthCheckGracePeriod: 60
       HealthCheckType: ELB
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-BackendApp
+          PropagateAtLaunch: Yes
+        - Key: WorkflowId
+          Value: !Ref WorkflowId
           PropagateAtLaunch: Yes
