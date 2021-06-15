@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Define an instance profile with role that will
+  attached to ec2 instances deployment in the infrastucture
+
+Parameters:
+  ProjectName:
+    Description: Specify the name of the project
+    Type: String
+    Default: RediSolar
+  EnvironmentName:
+    Description: Specify the environment in use
+    Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
+
+Resources:
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-${EnvironmentName}-Instance-Role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+
+      Policies: 
+        - PolicyName: Admin
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Resource: "*"
+      Tags:
+        - Key: Purpose
+          Value: !Sub Role for ec2 instances in ${ProjectName} Project
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${ProjectName}-${EnvironmentName}-Instance-Profile
+      Path: / 
+      Roles:
+        - !Ref InstanceRole
+
+Outputs:
+  InstanceProfile:
+    Description: Return the instance profile
+    Value: !Ref InstanceProfile
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Instance-Profile
+
+  InstanceProfileARN:
+    Description: Return the InstanceProfile ARN
+    Value: !GetAtt InstanceProfile.Arn
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Instance-Profile-ARN
+  
+  InstanceRole:
+    Description: Return the role created
+    Value: !Ref InstanceRole
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Instance-Role
+  
+  InstanceRoleARN:
+    Description: Return the ARN of the role created
+    Value: !GetAtt InstanceRole.Arn

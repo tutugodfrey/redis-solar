@@ -29,12 +29,10 @@ commands:
             # run cloudformation delete_stack command here.
             export TERM=xterm-color
             cd  ./aws-cloud-infra/cloudformation-templates/
-            ls -al
             . ./stack-helper.sh
-            delete_stack frontend-stack;
-            delete_stack backend-stack;
+            delete_stack backend-stack${CIRCLE_WORKFLOW_ID};
             sleep 150
-            delete_stack loadbalancer-stack;
+            delete_stack loadbalancer-stack${CIRCLE_WORKFLOW_ID};
 
       - run:
           name: Pipeline Success
@@ -94,10 +92,8 @@ jobs:
             export TERM=xterm-color
             cd ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
-            create_stack loadbalancer-stack loadbalancer-stack.yml loadbalancer-parameters.json;
-            sleep 200;
-            create_stack frontend-stack frontend-stack.yml frontend-parameters.json;
-            create_stack backend-stack backend-stack.yml backend-parameter.json;
+            deploy_stack loadbalancer-stack-${CIRCLE_WORKFLOW_ID} loadbalancer-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
+            deploy_stack backend-stack-${CIRCLE_WORKFLOW_ID} backend-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
       - destroy_environment
   
   configure_infrastructure:
@@ -143,7 +139,7 @@ workflows:
           requires: [build, test, analyze]
           filters:
             branches:
-              only: [develop, fix-issue-with-starting-app]
+              only: [develop, update-app-configuration]
       - configure_infrastructure:
           requires: [provision_infrastructure]
       - smoke_test:

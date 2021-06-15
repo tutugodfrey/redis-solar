@@ -1,0 +1,9 @@
+{
+  "Parameters": {
+    "ProjectName": "RediSolar",
+    "EnvironmentName": "Dev",
+    "KeyName": "aws2-oregon-key",
+    "ImageId": "ami-0e999cbd62129e3b1",
+    "InstanceType": "t2.micro"
+  }
+}

@@ -4,9 +4,21 @@ Parameters:
   ProjectName:
     Description: Project context stack to which stack is been used
     Type: String
+    Default: RediSolar
   EnvironmentName:
     Description: Environment context to which stack is been applied
     Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
+  WorkflowId:
+    Description: >
+     An ID to uniquely Identifier the resource
+     created each time the stack is run
+    Type: String
+    Default: 1
 
 Resources:
   WebAppLB:
@@ -18,44 +30,44 @@ Resources:
       SecurityGroups:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-LBSecGroup
   
-  Listeners:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      DefaultActions:
-      - Type: forward
-        TargetGroupArn:
-          Ref: WebAppTargetGroup
-      LoadBalancerArn:
-        Ref: WebAppLB
-      Port: 80
-      Protocol: HTTP
+  # Listeners:
+  #   Type: AWS::ElasticLoadBalancingV2::Listener
+  #   Properties:
+  #     DefaultActions:
+  #     - Type: forward
+  #       TargetGroupArn:
+  #         Ref: WebAppTargetGroup
+  #     LoadBalancerArn:
+  #       Ref: WebAppLB
+  #     Port: 80
+  #     Protocol: HTTP
 
-  ALBListenerRule:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn: !Ref WebAppTargetGroup
-      Conditions:
-      - Field: path-pattern
-        Values: [/]
-      ListenerArn: !Ref Listeners
-      Priority: 1
+  # ALBListenerRule:
+  #   Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  #   Properties:
+  #     Actions:
+  #     - Type: forward
+  #       TargetGroupArn: !Ref WebAppTargetGroup
+  #     Conditions:
+  #     - Field: path-pattern
+  #       Values: [/]
+  #     ListenerArn: !Ref Listeners
+  #     Priority: 1
   
-  WebAppTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 8
-      HealthyThresholdCount: 2
-      Port: 80
-      Protocol: HTTP
-      UnhealthyThresholdCount: 10
-      VpcId:
-        Fn::ImportValue:
-          Fn::Sub: ${ProjectName}-${EnvironmentName}-VPCID
+  # WebAppTargetGroup:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     HealthCheckIntervalSeconds: 10
+  #     HealthCheckPath: /
+  #     HealthCheckProtocol: HTTP
+  #     HealthCheckTimeoutSeconds: 8
+  #     HealthyThresholdCount: 2
+  #     Port: 80
+  #     Protocol: HTTP
+  #     UnhealthyThresholdCount: 10
+  #     VpcId:
+  #       Fn::ImportValue:
+  #         Fn::Sub: ${ProjectName}-${EnvironmentName}-VPCID
 
   APPListeners:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -66,7 +78,7 @@ Resources:
           Ref: BackendAppTargetGroup
       LoadBalancerArn:
         Ref: WebAppLB
-      Port: 8081
+      Port: 80
       Protocol: HTTP
 
   APPALBListenerRule:
@@ -77,15 +89,15 @@ Resources:
         TargetGroupArn: !Ref BackendAppTargetGroup
       Conditions:
       - Field: path-pattern
-        Values: [/api]
+        Values: [/]
       ListenerArn: !Ref APPListeners
-      Priority: 3
+      Priority: 1
 
   BackendAppTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 10
-      HealthCheckPath: /api
+      HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 8
       HealthyThresholdCount: 2
@@ -101,22 +113,22 @@ Outputs:
     Description: ID or ARN of the Load Balancer
     Value: !Ref WebAppLB
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppLB
+      Name: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WebAppLB
   
   LoadBalancerDNS:
     Description: DNS of the Load Balancer
     Value: !GetAtt WebAppLB.DNSName
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-WeBAppLB-DNS
+      Name: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WeBAppLB-DNS
   
-  TargetGroupARNs:
-    Description: ARN of web target group
-    Value: !Ref WebAppTargetGroup
-    Export: 
-      Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppTargetGroupARN
+  # TargetGroupARNs:
+  #   Description: ARN of web target group
+  #   Value: !Ref WebAppTargetGroup
+  #   Export: 
+  #     Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppTargetGroupARN
 
   BackendAppTargetGroupARNs:
     Description: ARN of the backend target
     Value: !Ref BackendAppTargetGroup
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-BackendAppTargetGroupARN
+      Name: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-BackendAppTargetGroupARN

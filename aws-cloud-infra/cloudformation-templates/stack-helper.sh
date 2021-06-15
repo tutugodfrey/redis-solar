@@ -32,6 +32,29 @@ if [[ $1 == '-h' ]] || [[ $1 == '--help' ]]; then
 fi
 
 # Create a stack with stack_name, template_body_file, parameters_file given
+function deploy_stack () {
+  STACK_NAME=$1
+  TEMPLATE_BODY=$2
+  PARAMETERS=$3
+  AWS_PROFILE=${AWS_PROFILE} # get from environment
+
+  # Use region set in env if available
+  if [[ ! -z ${AWS_REGION} ]]; then
+    REGION=${AWS_REGION}
+  fi
+
+  if [[ ! -z $AWS_PROFILE ]]; then
+    # Check if AWS_PROFILE is set in ENV and use it
+    # If providing $PARAMETERS as file make sure to use the format file://parameters-file.json
+    aws cloudformation deploy --stack-name $STACK_NAME --region=$REGION --template-file $TEMPLATE_BODY --parameter-overrides $PARAMETERS --profile $AWS_PROFILE
+  else
+    # Use default AWS Profile
+    aws cloudformation deploy --stack-name $STACK_NAME --region $REGION --template-file $TEMPLATE_BODY --parameter-overrides $PARAMETERS
+  fi
+  # aws cloudformation deploy --stack-name $STACK_NAME --template-body file://$PARAMETERS  --parameters file://$3 --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
+}
+
+# Create a stack with stack_name, template_body_file, parameters_file given
 function create_stack () {
   STACK_NAME=$1
   TEMPLATE_BODY=$2

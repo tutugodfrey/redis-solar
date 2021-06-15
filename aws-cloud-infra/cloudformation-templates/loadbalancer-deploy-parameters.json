@@ -1,0 +1,6 @@
+{ 
+  "Parameters": {
+    "ProjectName": "RediSolar",
+    "EnvironmentName": "Dev"
+  }
+}
