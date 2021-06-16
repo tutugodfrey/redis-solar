@@ -32,7 +32,7 @@ Parameters:
      An ID to uniquely Identifier the resource
      created each time the stack is run
     Type: String
-    Default: 1
+    Default: eee56529-211a-4066-9b2a-a9509536533a
 
 Resources:  
   BackendAppLaunchConfig:

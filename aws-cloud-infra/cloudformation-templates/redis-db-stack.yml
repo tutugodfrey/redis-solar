@@ -4,18 +4,30 @@ Parameters:
   ProjectName:
     Description: The Project context that the stack is applied to.
     Type: String
+    Default: RediSolar
   EnvironmentName: 
     Description: Environment context the stack is applied to
     Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
   ImageId:
     Description: EC2 Image ID to use
     Type: String
+    Default: ami-0e999cbd62129e3b1 # us-west-2 (Oregon) Amazon Linux 2 Image
+    AllowedValues:
+    - ami-0e999cbd62129e3b1 # us-west-2 (Oregon) Amazon Linux 2 AMI
+    - ami-03368e982f317ae48 # us-east-1 (N. Virgina) Amazon Linux 2 AMI
   InstanceType:
     Description: Define the capacity of EC2 Image
     Type: String
+    Default: t2.micro
   KeyName:
     Description: SSH Key Pair name
     Type: String
+    Default: aws2-oregon-key
 
 Resources:
   RedisDBInstance:
