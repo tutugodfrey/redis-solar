@@ -219,6 +219,23 @@ Resources:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-Test-SG
 
+  PrometheusServerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-SG
+      GroupDescription: !Sub ${ProjectName} ${EnvironmentName} Prometheus Server Security Group
+      VpcId:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 9090
+          ToPort: 9090
+          CidrIp: !Ref PublicCIDR
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref PublicCIDR
+
 Outputs:
   LBSecGroup:
     Description: SG of the Load Balancer
@@ -255,3 +272,9 @@ Outputs:
     Value: !Ref NatInstanceSG
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
+
+  PrometheusServerSG:
+    Description: Return the Security Group of Prometheus server
+    Value: !Ref PrometheusServerSG
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server-SG
