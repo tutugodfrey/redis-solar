@@ -6,9 +6,11 @@ Parameters:
   ProjectName:
     Description: Project template is been applied to.
     Type: String
+    Default: RediSolar
   EnvironmentName:
     Description: An environment name that will be prefixed to resources
     Type: String
+    Default: Dev
   VpcCIDR:
     Description: IP range for our VPC (CIDR notation)
     Type: String
@@ -18,15 +20,20 @@ Parameters:
     Default: 0.0.0.0/0
   PublicSubnetACIDR:
     Type: String
+    Default: 10.0.5.0/24
   PrivateSubnetACIDR:
     Type: String
+    Default: 10.0.2.0/24
   PublicSubnetBCIDR:
     Type: String
+    Default: 10.0.20.0/24
   PrivateSubnetBCIDR:
     Type: String
+    Default: 10.0.15.0/24
   KeyName:
     Description: ec2 ssh key pair
     Type: String
+    Default: aws2-oregon-key
   
 Resources:
   moduleVPC:
@@ -128,40 +135,79 @@ Resources:
       RouteTableId:
         Ref: PublicRouteTable
       DestinationCidrBlock: !Ref PublicCIDR
-  
-  PrivateRouteTableA:
+
+# To use the highly available configuration for nat instance,
+# route table and assocations please comment out this block
+# and uncomment the commented route table and subnet association
+# in the High Availability sections below
+
+  #  Use one routeable across the two private subnets
+  DefaultPrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
         Ref: moduleVPC
       Tags:
         - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-A
+          Value: !Sub ${ProjectName}-${EnvironmentName}-default-private-RT
 
-  PrivateRouteTableB:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId:
-        Ref: moduleVPC
-      Tags:
-        - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-B
-
-  PrivateRouteTableAssociation1:
+  DefaultPrivateRouteTableAssociationA:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: PrivateRouteTableA
+        Ref: DefaultPrivateRouteTable
       SubnetId:
         Ref: PrivateSubnetA
 
-  PrivateRouteTableAssociation2:
+  DefaultPrivateRouteTableAssociationB:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: PrivateRouteTableB
+        Ref: DefaultPrivateRouteTable
       SubnetId:
         Ref: PrivateSubnetB
+
+# The below two route table and subnet association are defined
+# to provide a highly available environment in the infrastructure
+# For the purpose of cost it is commented out.
+# If cost is not a concern uncomment the  block below and
+# comment out the routetable and subnet association just above this comment.
+# also reference nat-instance-stack.yml for corresponding changes.
+
+# High Availability
+  # PrivateRouteTableA:
+  #   Type: AWS::EC2::RouteTable
+  #   Properties:
+  #     VpcId:
+  #       Ref: moduleVPC
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-A
+
+  # PrivateRouteTableAssociation1:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     RouteTableId:
+  #       Ref: PrivateRouteTableA
+  #     SubnetId:
+  #       Ref: PrivateSubnetA
+
+  # PrivateRouteTableB:
+  #   Type: AWS::EC2::RouteTable
+  #   Properties:
+  #     VpcId:
+  #       Ref: moduleVPC
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${ProjectName}-${EnvironmentName}-private-route-table-B
+
+  # PrivateRouteTableAssociation2:
+  #   Type: AWS::EC2::SubnetRouteTableAssociation
+  #   Properties:
+  #     RouteTableId:
+  #       Ref: PrivateRouteTableB
+  #     SubnetId:
+  #       Ref: PrivateSubnetB
 
 Outputs:
   VPCID:
@@ -179,19 +225,30 @@ Outputs:
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-PUB-RT
 
-  VPCPrivateRouteTableA:
-    Description: Private Routing AZ A
-    Value: !Ref PrivateRouteTableA
-    Export: 
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-A
-  
-  VPCPrivateRouteTableB:
-    Description: Private Routing AZ B
-    Value: !Ref PrivateRouteTableB
-    Export: 
-      Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-B
+# Uncomment this output if the High Availability
+# section in resource definition is in use
 
-  PublicSubnetes:
+# High Availability
+  # VPCPrivateRouteTableA:
+  #   Description: Private Routing AZ A
+  #   Value: !Ref PrivateRouteTableA
+  #   Export: 
+  #     Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-A
+  
+  # VPCPrivateRouteTableB:
+  #   Description: Private Routing AZ B
+  #   Value: !Ref PrivateRouteTableB
+  #   Export:
+  #     Name: !Sub ${ProjectName}-${EnvironmentName}-PRI-RT-B
+  
+  # Comment out this section if High Availability section above is in use
+  VPCDefaultPrivateRouteTable:
+    Description: Route table associated with two private subnets
+    Value: !Ref DefaultPrivateRouteTable
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Default-PRI-RT
+
+  PublicSubnets:
     Description: A list of the public subnets
     Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB ]]
     Export:

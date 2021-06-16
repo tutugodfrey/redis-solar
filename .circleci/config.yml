@@ -20,7 +20,6 @@ commands:
     steps:
       - run:
           ## Here we want to destroy the infrastructure provisions
-          ## However, I am using describe stack for now because the I am still building the infrastructure
           ## And would need to monitor and understand any failure that would occur
           ## would delete from my terminal afterword
           name: Destroy environment when deployment fails
@@ -92,7 +91,7 @@ jobs:
             export TERM=xterm-color
             cd ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
-            deploy_stack loadbalancer-stack-${CIRCLE_WORKFLOW_ID} loadbalancer-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
+            deploy_stack redis-solar-loadbalancer-${CIRCLE_WORKFLOW_ID} loadbalancer-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
             deploy_stack backend-stack-${CIRCLE_WORKFLOW_ID} backend-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
       - destroy_environment
   
@@ -117,7 +116,7 @@ jobs:
           command: |
             export TERM=xterm-color
             pwd
-            export LB_URL=$(aws cloudformation describe-stacks --stack-name loadbalancer-stack --query "Stacks[*].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text);
+            export LB_URL=$(aws cloudformation describe-stacks --stack-name redis-solar-loadbalancer-${CIRCLE_WORKFLOW_ID} --query "Stacks[*].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text);
             counter=0;
             echo $LB_URL
             until curl -s --head http://${LB_URL} || [ $counter -gt 20 ]; do
@@ -181,7 +180,7 @@ jobs:
             export "$(grep OldWorkflowId ~/.env)"
             delete_stack backend-stack-${OldWorkflowId};
             sleep 150
-            delete_stack loadbalancer-stack-${OldWorkflowId}
+            delete_stack redis-solar-loadbalancer-${OldWorkflowId}
 
 workflows:
   default: 
@@ -195,7 +194,7 @@ workflows:
           requires: [build, test, analyze]
           filters:
             branches:
-              only: [develop, add-cloudfront]
+              only: [develop, refactor-architecture]
       - configure_infrastructure:
           requires: [provision_infrastructure]
       - smoke_test:

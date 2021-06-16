@@ -36,22 +36,39 @@ function deploy_stack () {
   STACK_NAME=$1
   TEMPLATE_BODY=$2
   PARAMETERS=$3
+  CAPABILITY=$4
   AWS_PROFILE=${AWS_PROFILE} # get from environment
 
-  # Use region set in env if available
+  # Use region set in env if available, else it use default region in aws config file 
   if [[ ! -z ${AWS_REGION} ]]; then
     REGION=${AWS_REGION}
   fi
 
+  COMMAND="aws cloudformation deploy --stack-name $STACK_NAME --template-file $TEMPLATE_BODY";
+
+  if [[ ! -z $PARAMETERS ]]; then
+    # If providing $PARAMETERS as file make sure to use the format file://parameters-file.json
+    COMMAND="${COMMAND} --parameter-overrides $PARAMETERS";
+  fi
+
+  if [[ ! -z $REGION ]]; then
+    # Region should be set in Environment variable
+    COMMAND="${COMMAND} --region=$REGION";
+  fi
+
+  if [[ ! -z $CAPABILITY ]]; then
+    COMMAND="${COMMAND} --capabilities $CAPABILITY";
+  fi
+
   if [[ ! -z $AWS_PROFILE ]]; then
     # Check if AWS_PROFILE is set in ENV and use it
-    # If providing $PARAMETERS as file make sure to use the format file://parameters-file.json
-    aws cloudformation deploy --stack-name $STACK_NAME --region=$REGION --template-file $TEMPLATE_BODY --parameter-overrides $PARAMETERS --profile $AWS_PROFILE
-  else
-    # Use default AWS Profile
-    aws cloudformation deploy --stack-name $STACK_NAME --region $REGION --template-file $TEMPLATE_BODY --parameter-overrides $PARAMETERS
+    COMMAND="${COMMAND} --profile $AWS_PROFILE";
   fi
-  # aws cloudformation deploy --stack-name $STACK_NAME --template-body file://$PARAMETERS  --parameters file://$3 --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
+  COMMAND="${COMMAND} --no-fail-on-empty-changeset"
+  echo $COMMAND
+  $COMMAND 
+
+  # aws cloudformation deploy --stack-name $STACK_NAME --template-file $PARAMETERS  --parameters $PARAMETERS --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
 }
 
 # Create a stack with stack_name, template_body_file, parameters_file given

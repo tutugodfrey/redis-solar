@@ -5,9 +5,15 @@ Parameters:
   ProjectName:
     Description:  Project to which Stack is being applied
     Type: String
+    Default: RediSolar
   EnvironmentName:
     Description: Environment name to be used as prefixed to resources
     Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
   PublicCIDR:
     Description: Public IP CIDR range
     Type: String
@@ -157,6 +163,37 @@ Resources:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-RedisServer SG
 
+  NatInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for Nat Instance, allow ingress from private subnets
+      GroupName: Nat Instance Security Group
+      VpcId:
+        Fn::ImportValue:
+          !Sub ${ProjectName}-${EnvironmentName}-VPCID
+      SecurityGroupIngress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp:
+          Fn::ImportValue:
+            !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-A-CIDR
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp:
+          Fn::ImportValue:
+            !Sub ${ProjectName}-${EnvironmentName}-PRI-SN-B-CIDR
+      SecurityGroupEgress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        CidrIp:
+          Ref: PublicCIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
+
   TestSG:
     Type: AWS::EC2::SecurityGroup
     DeletionPolicy: Retain
@@ -212,3 +249,9 @@ Outputs:
     Value: !GetAtt RedisServerSG.GroupId
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-RedisServerSG
+  
+  NatInstanceSG:
+    Description: Return the Nat Instance SG
+    Value: !Ref NatInstanceSG
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
