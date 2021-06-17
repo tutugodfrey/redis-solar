@@ -38,9 +38,38 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Effect: Allow
-                Action: "*"
+              - Action: "ec2:*"
+                Effect: "Allow"
                 Resource: "*"
+              - Effect: Allow
+                Action: [
+                  "cloudformation:Describe*",
+                  "cloudformation:EstimateTemplateCost",
+                  "cloudformation:Get*",
+                  "cloudformation:List*",
+                  "cloudformation:ValidateTemplate",
+                  "cloudformation:Detect*"
+                ]
+                Resource: "*"
+              - Effect: Allow
+                Action: [
+                  "cloudwatch:PutMetricData",
+                  "ec2:DescribeVolumes",
+                  "ec2:DescribeTags",
+                  "logs:PutLogEvents",
+                  "logs:DescribeLogStreams",
+                  "logs:DescribeLogGroups",
+                  "logs:CreateLogStream",
+                  "logs:CreateLogGroup"
+                ]
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                - "ssm:GetParameter"
+                Resource: [
+                  "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*",
+                  "arn:aws:ssm:*:*:parameter/DB_PASS"
+                ]
       Tags:
         - Key: Purpose
           Value: !Sub Role for ec2 instances in ${ProjectName} Project

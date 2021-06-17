@@ -60,3 +60,25 @@ Resources:
           git clone https://github.com/tutugodfrey/redis-solar;
           cd redis-solar/scripts/prometheus;
           ./prometheus.sh;
+
+Outputs:
+  PrometheusServerPublicIP:
+    Description: Return the PublicIP of the Prometheus Server
+    Value: !GetAtt PrometheusInstance.PublicIp
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server-PublicIP
+  PrometheusServerPublicDNS:
+    Description: Return the PublicDNS of the Prometheus Server
+    Value: !GetAtt PrometheusInstance.PublicDnsName
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server-PublicDNS
+  PrometheusServerPrivateIP:
+    Description: Return the PrivateIP of the Prometheus Server
+    Value: !GetAtt PrometheusInstance.PrivateIp
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server-PrivateIP
+  PrometheusServerPrivateDNS:
+    Description: Return the PrivateDNS of the Prometheus Server
+    Value: !GetAtt PrometheusInstance.PrivateDnsName
+    Export:
+      Name: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server-PrivateDNS
