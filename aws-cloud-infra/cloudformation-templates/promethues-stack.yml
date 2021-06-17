@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Stack to create a an instance that will run prometheus
+
+Parameters:
+  ProjectName:
+    Description: Specify the name of the project
+    Type: String
+    Default: RediSolar
+  EnvironmentName:
+    Description: Specify the environment in use
+    Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
+  ImageId:
+    Description: Id of the image to use
+    Type: String
+    Default: ami-0e999cbd62129e3b1 # us-west-2 (Oregon) Amazon Linux 2 Image
+    AllowedValues:
+    - ami-0e999cbd62129e3b1 # us-west-2 (Oregon) Amazon Linux 2 AMI
+    - ami-03368e982f317ae48 # us-east-1 (N. Virgina) Amazon Linux 2 AMI
+  KeyName:
+    Description: Key pair to connect to the instance
+    Type: String
+    Default: aws2-oregon-key
+  InstanceType:
+    Description: Define the capacity of the Instance
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+    - t2.micro
+    - t2.medium
+
+Resources:
+  PrometheusInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      KeyName: !Ref KeyName
+      InstanceType: !Ref InstanceType
+      SubnetId:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-A
+      AvailabilityZone:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-AZ-A
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-Instance-Profile
+      SecurityGroupIds:
+      - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server-SG
+      Tags: 
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Prometheus-Server
+      UserData:
+        Fn::Base64: !Sub |
+          #! /bin/bash
+          yum update -y;
+          yum install git -y;
+          git clone https://github.com/tutugodfrey/redis-solar;
+          cd redis-solar/scripts/prometheus;
+          ./prometheus.sh;
