@@ -33,13 +33,19 @@ commands:
             sleep 150
             delete_stack loadbalancer-stack${CIRCLE_WORKFLOW_ID};
 
+  destroy_test_environment:
+    steps:
       - run:
-          name: Pipeline Success
+          name: Clear up environment
           command: |
-            echo """
-              If you see this message, then the Pipeline has run successfully, Congrate!
-              Inspect the workflow to see what the Pipeline does.
-            """
+            cd ./aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            export "$(grep ENVIRONMENT ~/.env)"
+            delete_stack redis-solar-${ENVIRONMENT}-backend-app-${CIRCLE_WORKFLOW_ID}
+            delete_stack redis-solar-${ENVIRONMENT}-natinstance-${CIRCLE_WORKFLOW_ID}
+            delete_stack redis-solar-redis-${ENVIRONMENT}-db-${CIRCLE_WORKFLOW_ID}
+            sleep 350
+            delete_stack redis-solar-${ENVIRONMENT}-loadbalancer-${CIRCLE_WORKFLOW_ID}
 
 orbs:
   # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
@@ -49,6 +55,25 @@ orbs:
 
 
 jobs:
+  configure_env:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - run:
+          name: set-env
+          command: |
+            ENVIRONMENT=Test
+            echo The current branch is $CIRCLE_BRANCH
+            if [[ $CIRCLE_BRANCH == 'develop' ]]; then
+              ENVIRONMENT=Prod
+            fi
+            echo ENVIRONMENT=${ENVIRONMENT} >> ~/.env;
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - .env
   build:
     <<: *defaults
     steps:
@@ -80,19 +105,30 @@ jobs:
           command: |
             echo Pending npm audit;
   
-  provision_infrastructure:
+  provision_prod_infrastructure:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
+
+      - run:
+         name: Install Dependencies
+         command: |
+           yum install -y tar gzip;
+
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Executu CloudFormation template to deploy the infrastructe
           command: |
             export TERM=xterm-color
+            export "$(grep ENVIRONMENT ~/.env)"
             cd ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
-            deploy_stack redis-solar-loadbalancer-${CIRCLE_WORKFLOW_ID} loadbalancer-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
-            deploy_stack backend-stack-${CIRCLE_WORKFLOW_ID} backend-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
+            ./initial-env-setup.sh
+            # deploy_stack redis-solar-${ENVIRONMENT}-loadbalancer-${CIRCLE_WORKFLOW_ID} loadbalancer-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
+            # deploy_stack redis-solar-${ENVIRONMENT}-backend-app-${CIRCLE_WORKFLOW_ID} backend-stack.yml WorkflowId=${CIRCLE_WORKFLOW_ID};
       - destroy_environment
   
   configure_infrastructure:
@@ -105,18 +141,53 @@ jobs:
           name: Run playbook to configure and start the server
           command:
             echo running ansible-playbook -i inventory playbook.yml # work in progress
-  
+
+  provision_test_infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+
+      - run:
+         name: Install Dependencies
+         command: |
+           yum install -y tar gzip;
+
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          name: Executu CloudFormation template to deploy the infrastructure in the test environment
+          command: |
+            export TERM=xterm-color
+            export "$(grep ENVIRONMENT ~/.env)"
+            cd ./aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            ./initial-env-setup.sh 
+      - destroy_environment
+
   smoke_test:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
+
+      - run:
+         name: Install Dependencies
+         command: |
+           yum install -y tar gzip;
+
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Curl the Application to get response
           command: |
             export TERM=xterm-color
-            pwd
-            export LB_URL=$(aws cloudformation describe-stacks --stack-name redis-solar-loadbalancer-${CIRCLE_WORKFLOW_ID} --query "Stacks[*].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text);
+            export "$(grep ENVIRONMENT ~/.env)"
+            cd ./aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            export LB_URL=$(describe_stack redis-solar-${ENVIRONMENT}-loadbalancer-${CIRCLE_WORKFLOW_ID} "Stacks[*].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue");
             counter=0;
             echo $LB_URL
             until curl -s --head http://${LB_URL} || [ $counter -gt 20 ]; do
@@ -137,10 +208,16 @@ jobs:
          command: |
            yum install -y tar gzip;
 
+      - attach_workspace:
+          at: ~/
+
       - run:
           name: Get Old WorkflowId
           command: |
-            OldWorkflowId=$(aws cloudformation describe-stacks --stack-name redis-solar-cloudfront --query "Stacks[*].Outputs[?OutputKey=='WorkflowId'].OutputValue" --output text);
+            export "$(grep ENVIRONMENT ~/.env)"
+            cd ./aws-cloud-infra/cloudformation-templates/
+            . ./stack-helper.sh
+            OldWorkflowId=$(describe_stack redis-solar-${ENVIRONMENT}-cloudfront "Stacks[*].Outputs[?OutputKey=='WorkflowId'].OutputValue"));
             echo OldWorkflowId=$OldWorkflowId >> ~/.env;
             echo OLD ID $(cat .env)
       
@@ -151,13 +228,14 @@ jobs:
       - run:
           name: Update cloud origin with loadbalancer url
           command: |
+            export "$(grep ENVIRONMENT ~/.env)"
             cd ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
-            deploy_stack redis-solar-cloudfront cloudfront.yml WorkflowId=${CIRCLE_WORKFLOW_ID}
+            deploy_stack redis-solar-${ENVIRONMENT}-cloudfront cloudfront.yml WorkflowId=${CIRCLE_WORKFLOW_ID}
 
       - destroy_environment # Rollback on failure 
 
-  cleanup_old_environment:
+  cleanup_old_prod_environment:
     docker:
       - image: amazon/aws-cli
 
@@ -171,35 +249,78 @@ jobs:
 
       - attach_workspace:
           at: ~/
+
       - run:
           name: clean up
           command: |
             # clean up old environment
             cd ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
+            export "$(grep ENVIRONMENT ~/.env)"
             export "$(grep OldWorkflowId ~/.env)"
-            delete_stack backend-stack-${OldWorkflowId};
-            sleep 150
-            delete_stack redis-solar-loadbalancer-${OldWorkflowId}
+            delete_stack redis-solar-${ENVIRONMENT}-backend-app-${OldWorkflowId};
+            sleep 350
+            delete_stack redis-solar-${ENVIRONMENT}-loadbalancer-${OldWorkflowId}
+
+  cleanup_test_environment:
+    docker:
+      - image: amazon/aws-cli
+    
+    steps:
+      - checkout
+
+      - run:
+         name: Install Dependencies
+         command: |
+           yum install -y tar gzip;
+
+      - attach_workspace:
+          at: ~/
+
+      - destroy_test_environment
 
 workflows:
   default: 
     jobs:
-      - build
+      - configure_env
+      - build:
+          requires: [configure_env]
       - test:
           requires: [build]
       - analyze:
          requires:  [test]
-      - provision_infrastructure:
+      - provision_prod_infrastructure:
           requires: [build, test, analyze]
           filters:
             branches:
-              only: [develop, refactor-architecture]
+              only: [develop]
+      - provision_test_infrastructure:
+          requires: [build, test, analyze]
+          filters:
+            branches:
+              ignore: [develop]
       - configure_infrastructure:
-          requires: [provision_infrastructure]
+          name: configure_prod_infrastructure
+          requires: [provision_prod_infrastructure]
+      - configure_infrastructure:
+          name: configure_test_infrastructure
+          requires: [provision_test_infrastructure]
       - smoke_test:
-          requires: [configure_infrastructure]
+          name: smoke_test_prod
+          requires: [configure_prod_infrastructure]
+      - smoke_test:
+          name: smoke_test_test
+          requires: [configure_test_infrastructure]
       - promote_to_production:
-          requires: [smoke_test]
-      - cleanup_old_environment:
+          requires: [smoke_test_prod]
+          filters:
+            branches:
+              only: [develop]
+      - cleanup_old_prod_environment:
           requires: [promote_to_production]
+      - verify_test:
+          type: approval
+          requires:
+            - smoke_test_test
+      - cleanup_test_environment:
+          requires: [verify_test]

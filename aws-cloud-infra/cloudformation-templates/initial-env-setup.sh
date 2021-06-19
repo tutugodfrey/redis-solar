@@ -8,20 +8,33 @@
 # Source the stack helper script
 source ./stack-helper.sh
 
-DEFAULT_WORKFLOW_ID=eee56529-211a-4066-9b2a-a9509536533a
+# Set the default WorkflowId, or use CircleCI WORKDLOW ID
+WORKFLOW_ID=eee56529-211a-4066-9b2a-a9509536533a
+if [[ ! -z $CIRCLE_WORKFLOW_ID ]]; then
+  WORKFLOW_ID=${CIRCLE_WORKFLOW_ID}
+fi
 
-deploy_stack redis-solar-vpc redis-solar-vpc-stack.yml
-deploy_stack redis-solar-security-groups security-groups-stack.yml
-deploy_stack redis-solar-instance-profile instance-profile.yml "" CAPABILITY_NAMED_IAM
-deploy_stack redis-solar-loadbalancer-${DEFAULT_WORKFLOW_ID} loadbalancer-stack.yml
-deploy_stack redis-solar-natinstance-stack natinstance-stack.yml
-deploy_stack redis-solar-redis-db redis-db-stack.yml
+echo Workflow ID is $WORKFLOW_ID
+echo Environment is ${ENVIRONMENT}
+echo Environment is $ENVIRONMENT
+# Enforce Dev as the default environment
+if [[ -z $ENVIRONMENT ]]; then
+  ENVIRONMENT=Dev
+fi
+
+
+deploy_stack redis-solar-${ENVIRONMENT}-vpc redis-solar-vpc-stack.yml "EnvironmentName=${ENVIRONMENT}"
+deploy_stack redis-solar-${ENVIRONMENT}-security-groups security-groups-stack.yml "EnvironmentName=${ENVIRONMENT}"
+deploy_stack redis-solar-${ENVIRONMENT}-instance-profile instance-profile.yml "EnvironmentName=${ENVIRONMENT}" CAPABILITY_NAMED_IAM
+deploy_stack redis-solar-${ENVIRONMENT}-natinstance natinstance-stack.yml "EnvironmentName=${ENVIRONMENT}"
+deploy_stack redis-solar-${ENVIRONMENT}-loadbalancer-${WORKFLOW_ID} loadbalancer-stack.yml "EnvironmentName=${ENVIRONMENT}  WorkflowId=${WORKFLOW_ID}"
+deploy_stack redis-solar-${ENVIRONMENT}-redis-db redis-db-stack.yml "EnvironmentName=${ENVIRONMENT}"
 
 # The following stack with be created/or updated in the CI/CD Pipeline
 # This will be replaced by CI/CD pipeline
-deploy_stack redis-solar-backend-stack-${DEFAULT_WORKFLOW_ID} backend-stack.yml
+deploy_stack redis-solar-${ENVIRONMENT}-backend-app-${WORKFLOW_ID} backend-stack.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID}"
 
 # This will be Updated by CI/CD pipeline
-deploy_stack redis-solar-cloudfront cloudfront.yml WorkflowId=${DEFAULT_WORKFLOW_ID}
+deploy_stack redis-solar-${ENVIRONMENT}-cloudfront cloudfront.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID}"
 
 # deploy_stack redis-solar-instance-profile instance-profile.yml --capabilities CAPABILITY_NAMED_IAM
