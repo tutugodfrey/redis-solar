@@ -217,7 +217,7 @@ jobs:
             export "$(grep ENVIRONMENT ~/.env)"
             cd ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
-            OldWorkflowId=$(describe_stack redis-solar-${ENVIRONMENT}-cloudfront "Stacks[*].Outputs[?OutputKey=='WorkflowId'].OutputValue"));
+            OldWorkflowId=$(describe_stack redis-solar-${ENVIRONMENT}-cloudfront "Stacks[*].Outputs[?OutputKey=='WorkflowId'].OutputValue");
             echo OldWorkflowId=$OldWorkflowId >> ~/.env;
             echo OLD ID $(cat .env)
       
