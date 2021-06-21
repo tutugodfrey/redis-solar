@@ -73,6 +73,11 @@ Resources:
       Tags:
         - Key: Purpose
           Value: !Sub Role for ec2 instances in ${ProjectName} Project
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile

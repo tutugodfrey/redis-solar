@@ -100,3 +100,9 @@ Resources:
         - Key: WorkflowId
           Value: !Ref WorkflowId
           PropagateAtLaunch: Yes
+        - Key: Environment
+          Value: !Ref EnvironmentName
+          PropagateAtLaunch: Yes
+        - Key: Project
+          Value: !Ref ProjectName
+          PropagateAtLaunch: Yes

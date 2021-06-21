@@ -79,6 +79,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-CF
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
 Outputs:
   DistributionID:

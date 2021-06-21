@@ -43,8 +43,13 @@ Resources:
       EnableDnsHostnames: true
       EnableDnsSupport: true
       Tags:
-      - Key: Name
-        Value: !Sub ${ProjectName}-${EnvironmentName}-VPC
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-VPC
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -55,6 +60,11 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetA
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
   PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -66,6 +76,11 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetA
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -76,6 +91,11 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-PrivateSubnetB
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
@@ -87,6 +107,11 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-PublicSubnetB
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
   InternetGateWay:
     Type: AWS::EC2::InternetGateway
     Properties:
