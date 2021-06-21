@@ -259,9 +259,12 @@ jobs:
             . ./stack-helper.sh
             export "$(grep ENVIRONMENT ~/.env)"
             export "$(grep OldWorkflowId ~/.env)"
-            delete_stack redis-solar-${ENVIRONMENT}-backend-app-${OldWorkflowId};
-            sleep 350
-            delete_stack redis-solar-${ENVIRONMENT}-loadbalancer-${OldWorkflowId}
+            echo $OldWorkflowId is the old workflow id
+            if [[ $OldWorkflowId != ${CIRCLE_WORKFLOW_ID} ]]; then
+              delete_stack redis-solar-${ENVIRONMENT}-backend-app-${OldWorkflowId};
+              sleep 350
+              delete_stack redis-solar-${ENVIRONMENT}-loadbalancer-${OldWorkflowId}
+            fi
 
   cleanup_test_environment:
     docker:
