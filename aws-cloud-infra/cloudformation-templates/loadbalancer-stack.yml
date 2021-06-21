@@ -24,11 +24,18 @@ Resources:
   WebAppLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
+      Type: application
+      Scheme: internet-facing
       Subnets:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-A
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-PUB-SN-B
       SecurityGroups:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-LBSecGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
   
   # Listeners:
   #   Type: AWS::ElasticLoadBalancingV2::Listener
@@ -121,11 +128,11 @@ Outputs:
     Export:
       Name: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WeBAppLB-DNS
   
-  # TargetGroupARNs:
-  #   Description: ARN of web target group
-  #   Value: !Ref WebAppTargetGroup
-  #   Export: 
-  #     Name: !Sub ${ProjectName}-${EnvironmentName}-WebAppTargetGroupARN
+  LoadBalancerName:
+    Description: Return the Name of Load Balancer
+    Value: !GetAtt WebAppLB.LoadBalancerName
+    Export: 
+      Name: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancerName
 
   BackendAppTargetGroupARNs:
     Description: ARN of the backend target

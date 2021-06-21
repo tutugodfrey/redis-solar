@@ -96,10 +96,14 @@ Resources:
       SourceDestCheck: false
       SecurityGroupIds:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
-      # - Ref: NatInstanceSG
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-NatInstance1
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
       UserData:
         Fn::Base64: !Sub |
           #! /bin/bash    
@@ -146,10 +150,13 @@ Resources:
   #     SourceDestCheck: false
   #     SecurityGroupIds:
   #     - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
-  #     # - Ref: NatInstanceSG
   #     Tags:
   #       - Key: Name
   #         Value: !Sub ${ProjectName}-${EnvironmentName}-NatInstance1
+  #         - Key: Environment
+  #           Value: !Ref EnvironmentName
+  #         - Key: Project
+  #           Value: !Ref ProjectName
   #     UserData:
   #       Fn::Base64: !Sub |
   #         #! /bin/bash
@@ -197,6 +204,10 @@ Resources:
   #     Tags:
   #       - Key: Name
   #         Value: !Sub ${ProjectName}-${EnvironmentName}-NatInstance2
+  #       - Key: Environment
+  #         Value: !Ref EnvironmentName
+  #       - Key: Project
+  #         Value: !Ref ProjectName
   #     UserData:
   #       Fn::Base64: !Sub |
   #         #! /bin/bash

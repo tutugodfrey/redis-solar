@@ -27,11 +27,12 @@ commands:
           command: |
             # run cloudformation delete_stack command here.
             export TERM=xterm-color
+            export "$(grep ENVIRONMENT ~/.env)"
             cd  ./aws-cloud-infra/cloudformation-templates/
             . ./stack-helper.sh
-            delete_stack backend-stack${CIRCLE_WORKFLOW_ID};
+            delete_stack redis-solar-${ENVIRONMENT}-backend-app-${CIRCLE_WORKFLOW_ID};
             sleep 150
-            delete_stack loadbalancer-stack${CIRCLE_WORKFLOW_ID};
+            delete_stack redis-solar-${ENVIRONMENT}-loadbalancer-${CIRCLE_WORKFLOW_ID};
 
   destroy_test_environment:
     steps:

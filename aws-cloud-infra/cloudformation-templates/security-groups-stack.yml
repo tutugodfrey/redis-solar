@@ -48,6 +48,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-Jump Server SG
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
   LBSecGroup:
     Type: AWS::EC2::SecurityGroup
@@ -80,6 +84,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-LoadBalancer SG
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
   # WebServerSecGroup:
   #   Type: AWS::EC2::SecurityGroup
@@ -136,7 +144,11 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName} App Server SG
-  
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
+
   RedisServerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -162,6 +174,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-RedisServer SG
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
   NatInstanceSG:
     Type: AWS::EC2::SecurityGroup
@@ -193,6 +209,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-NATInstance-SG
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
   TestSG:
     Type: AWS::EC2::SecurityGroup
@@ -218,6 +238,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-Test-SG
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
   PrometheusServerSG:
     Type: AWS::EC2::SecurityGroup
@@ -235,6 +259,11 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref PublicCIDR
+      Tags:
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Project
+          Value: !Ref ProjectName
 
 Outputs:
   LBSecGroup:
