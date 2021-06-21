@@ -7,7 +7,7 @@ Parameters:
     Description: Specify the name of the project
     Type: String
     Default: RediSolar
-  EnvironmentName:
+  Environment:
     Description:  The environment in use
     Type: String
     Default: Dev
@@ -38,7 +38,7 @@ Resources:
         CacheBehaviors:
           - PathPattern: /
             TargetOriginId:
-              Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WebAppLB
+              Fn::ImportValue: !Sub ${ProjectName}-${Environment}-${WorkflowId}-WebAppLB
             ViewerProtocolPolicy: allow-all
             ForwardedValues:
               QueryString: false
@@ -57,14 +57,14 @@ Resources:
             - GET
             - HEAD
           TargetOriginId:
-             Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WebAppLB
+             Fn::ImportValue: !Sub ${ProjectName}-${Environment}-${WorkflowId}-WebAppLB
         Origins:
           - ConnectionTimeout: 3
             ConnectionAttempts: 2
             DomainName:
-              Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WeBAppLB-DNS
+              Fn::ImportValue: !Sub ${ProjectName}-${Environment}-${WorkflowId}-WeBAppLB-DNS
             Id:
-               Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-WebAppLB
+               Fn::ImportValue: !Sub ${ProjectName}-${Environment}-${WorkflowId}-WebAppLB
             CustomOriginConfig:
               HTTPPort: 80
               HTTPSPort: 443
@@ -78,23 +78,23 @@ Resources:
                 - SSLv3
       Tags:
         - Key: Name
-          Value: !Sub ${ProjectName}-${EnvironmentName}-CF
+          Value: !Sub ${ProjectName}-${Environment}-CF
 
 Outputs:
   DistributionID:
     Description: ID of the Destribution
     Value: !Ref Distribution
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-CloudFront-DistributionID
+      Name: !Sub ${ProjectName}-${Environment}-CloudFront-DistributionID
 
   DistributionDomain:
     Description: Domain Name of the cloudfront distribution
     Value: !GetAtt Distribution.DomainName
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-DistributionDomain
+      Name: !Sub ${ProjectName}-${Environment}-DistributionDomain
   
   WorkflowId:
     Description: ID to uniquely identify each run of the template.
     Value: !Ref WorkflowId
     Export:
-      Name: !Sub ${ProjectName}-${EnvironmentName}-WorkflowId
+      Name: !Sub ${ProjectName}-${Environment}-WorkflowId

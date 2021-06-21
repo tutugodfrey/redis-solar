@@ -48,8 +48,12 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #! /bin/bash
-          
+          START=$(date +%s)
           yum update -y;
+          # export ENVIRONMENT=${EnvironmentName}
+          # export AWS_REGION=${AWS::Region}
+          # echo $ENVIRONMENT $AWS_REGION
+          # yum update -y aws-cfn-bootstrap
           yum install git -y;
           amazon-linux-extras install nginx1 -y;
           # Install node.js
@@ -59,16 +63,21 @@ Resources:
           git clone https://github.com/tutugodfrey/redis-solar;
           cd redis-solar;
           npm install;
-          export AWS_REGION=us-west-2
           # We're running redis with TLS enabled with self-signed cert
-          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-solar-redis-db --region $AWS_REGION --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
+          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-solar-${EnvironmentName}-redis-db --region ${AWS::Region} --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
           echo DB_ADDRESS is $DB_HOST
           sed  -i "s/localhost/$DB_HOST/" config.json
           sed -i '/dataStores.redis.port/a \ \ tls: {}' src/daos/impl/redis/redis_client.js
           # Disabling certificate verification for self-signed cert
           export NODE_TLS_REJECT_UNAUTHORIZED='0'
           npm run load src/resources/data/sites.json flushdb # optional flushdb
-          npm start;
+
+          # Track script execution end
+          END_TIME=$(date +%s)
+          DURATION=$(echo "$END_TIME - $START" | bc)
+          echo Execution complete in $DURATION | tee /tmp/duration.txt
+
+          npm start &
   
   BackendAppGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -82,7 +91,7 @@ Resources:
       MaxSize: '3'
       TargetGroupARNs:
       - Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-${WorkflowId}-BackendAppTargetGroupARN # Define this target
-      HealthCheckGracePeriod: 60
+      HealthCheckGracePeriod: 350
       HealthCheckType: ELB
       Tags:
         - Key: Name

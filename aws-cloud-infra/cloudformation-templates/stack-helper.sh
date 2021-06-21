@@ -125,13 +125,21 @@ function delete_stack () {
 # Describe a stack with name given
 function describe_stack () {
   STACK_NAME=$1
+  QUERY=$2
   AWS_PROFILE=${AWS_PROFILE}
 
-  if [[ ! -z $AWS_PROFILE ]]; then
-    aws cloudformation delete-stack --stack-name $STACK_NAME --profile $AWS_PROFILE
-  else 
-    aws cloudformation delete-stack --stack-name $STACK_NAME
+  COMMAND="aws cloudformation describe-stacks --stack-name $STACK_NAME"
+
+  if [[ ! -z $QUERY ]]; then
+    COMMAND="$COMMAND --query $QUERY --output text"
   fi
+
+  if [[ ! -z $AWS_PROFILE ]]; then
+    COMMAND="$COMMAND --profile $AWS_PROFILE"
+  fi
+
+  # echo $COMMAND
+  $COMMAND
 }
 
 # List stacks in your account
