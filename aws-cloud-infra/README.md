@@ -1,7 +1,7 @@
 # RediSolar Data Center
 
 ## Architecture Diagram
-![Data center Architecture Diagram](data-center-architecture.png)
+![Data center Architecture Diagram](RediSolar.png)
 
 
 [![CircleCI](https://circleci.com/gh/tutugodfrey/redis-solar.svg?style=svg)](https://circleci.com/gh/tutugodfrey/redis-solar)

@@ -10,6 +10,11 @@ This is a simple application that uses Redis as a backend Database for Solar sit
 
 ---
 
+## Architecture Diagram
+![Data center Architecture Diagram](RediSolar.png)
+
+---
+
 # Prerequisites
 
 In order to start and run this application, you will need:
