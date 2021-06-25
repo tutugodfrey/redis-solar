@@ -35,6 +35,11 @@ deploy_stack redis-solar-${ENVIRONMENT}-redis-db redis-db-stack.yml "Environment
 deploy_stack redis-solar-${ENVIRONMENT}-backend-app-${WORKFLOW_ID} backend-stack.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID}"
 
 # This will be Updated by CI/CD pipeline
-deploy_stack redis-solar-${ENVIRONMENT}-cloudfront cloudfront.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID}"
+deploy_stack redis-solar-${ENVIRONMENT}-cloudfront cloudfront.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID} CertificateARN=${CertificateARN}"
 
 # deploy_stack redis-solar-instance-profile instance-profile.yml --capabilities CAPABILITY_NAMED_IAM
+
+# Create Route53 hosted zone with alias record for production use
+if [[ $ENVIRONMENT == Prod ]]; then
+  deploy_stack redis-solar-${ENVIRONMENT}-route53 route53-stack.yml "EnvironmentName=${ENVIRONMENT} DomainName=${DomainName} "
+fi

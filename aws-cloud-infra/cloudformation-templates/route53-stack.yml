@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Create a route 53 stack
+
+Parameters:
+  ProjectName:
+    Description: Specify the project in use
+    Type: String
+    Default: RediSolar
+  ProjectNameSmall:
+    Description: Specify the project in use
+    Type: String
+    Default: redisolar
+  EnvironmentName:
+    Description: Specify the environment in use
+    Type: String
+    Default: Dev
+    AllowedValues:
+    - Dev
+    - Test
+    - Prod
+  DomainName:
+    Description: Domain name to be managed by Route53
+    Type: String
+  CloudfrontHostedZoneId:
+    Description: HostedZoneId for cloudfront for routing route53 traffic
+    Type: String
+    Default: Z2FDTNDATAQYW2
+  RecordType:
+    Description: Specify the Route53 RecordSet Type
+    Type: String
+    Default: A
+
+Resources:
+  Route53HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref DomainName
+      HostedZoneConfig:
+        Comment: Route53 hosted zone 
+      HostedZoneTags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref EnvironmentName
+      # QueryLoggingConfig:
+  
+  Route53RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName:
+          Fn::ImportValue: !Sub ${ProjectName}-${EnvironmentName}-DistributionDomain
+        HostedZoneId: Z2FDTNDATAQYW2
+      Comment: !Sub DNS name for ${ProjectName} cloudfront
+      Name: !Sub ${ProjectName}.${DomainName}
+      Name: !Sub ${ProjectNameSmall}.${DomainName}
+      Type: !Ref RecordType
+      HostedZoneId: !Ref Route53HostedZone
+
+Outputs:
+  HostedZoneID:
+    Description: Return the Id of the Route53 HostedZone
+    Value: !Ref Route53HostedZone
+  ID:
+    Description: Return the Id that route 53 assign to the hosted zone
+    Value: !GetAtt Route53HostedZone.Id
+  NameServers:
+    Description: Return the NameServers for the created hosted zone
+    Value:
+      Fn::Join: [' ', !GetAtt [ Route53HostedZone, NameServers ]]
