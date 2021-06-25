@@ -7,6 +7,10 @@ Parameters:
     Description: Specify the name of the project
     Type: String
     Default: RediSolar
+  ProjectNameSmall:
+    Description: Specify the name of the project
+    Type: String
+    Default: redisolar
   EnvironmentName:
     Description:  The environment in use
     Type: String
@@ -21,6 +25,13 @@ Parameters:
      created each time the stack is run
     Type: String
     Default: eee56529-211a-4066-9b2a-a9509536533a
+  CertificateARN:
+    Description: AWS CM Certificate to be used with cloudfront
+    Type: String
+  CustomDomainName:
+    Description: Custom domian nane to be use with cloudfront
+    Type: String
+    Default: atoms-energy.com
 
 Resources:
   CloudFrontOriginAccessIdentity:
@@ -35,6 +46,8 @@ Resources:
       DistributionConfig:
         IPV6Enabled: False
         Enabled: True
+        Aliases:
+          - !Sub ${ProjectNameSmall}.${CustomDomainName}
         CacheBehaviors:
           - PathPattern: /
             TargetOriginId:
@@ -76,6 +89,10 @@ Resources:
                 - TLSv1.1
                 - TLSv1.2
                 - SSLv3
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateARN
+          MinimumProtocolVersion: TLSv1.2_2019
+          SslSupportMethod: sni-only
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-CF
