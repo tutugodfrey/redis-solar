@@ -50,10 +50,8 @@ Resources:
           #! /bin/bash
           START=$(date +%s)
           yum update -y;
-          # export ENVIRONMENT=${EnvironmentName}
-          # export AWS_REGION=${AWS::Region}
-          # echo $ENVIRONMENT $AWS_REGION
-          # yum update -y aws-cfn-bootstrap
+          yum update -y aws-cfn-bootstrap
+          aws configure set default.region ${AWS::Region}
           yum install git -y;
           amazon-linux-extras install nginx1 -y;
           # Install node.js
@@ -64,7 +62,7 @@ Resources:
           cd redis-solar;
           npm install;
           # We're running redis with TLS enabled with self-signed cert
-          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-solar-${EnvironmentName}-redis-db --region ${AWS::Region} --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
+          export DB_HOST=$(aws cloudformation describe-stacks --stack-name redis-solar-${EnvironmentName}-redis-db --query "Stacks[*].Outputs[?OutputKey=='RedisServerPrivateIP'].OutputValue" --output text);
           echo DB_ADDRESS is $DB_HOST
           sed  -i "s/localhost/$DB_HOST/" config.json
           sed -i '/dataStores.redis.port/a \ \ tls: {}' src/daos/impl/redis/redis_client.js
