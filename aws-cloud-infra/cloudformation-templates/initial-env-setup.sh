@@ -35,7 +35,7 @@ deploy_stack redis-solar-${ENVIRONMENT}-redis-db redis-db-stack.yml "Environment
 deploy_stack redis-solar-${ENVIRONMENT}-backend-app-${WORKFLOW_ID} backend-stack.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID}"
 
 # This will be Updated by CI/CD pipeline
-deploy_stack redis-solar-${ENVIRONMENT}-cloudfront cloudfront.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID} CertificateARN=${CertificateARN}"
+deploy_stack redis-solar-${ENVIRONMENT}-cloudfront cloudfront.yml "EnvironmentName=${ENVIRONMENT} WorkflowId=${WORKFLOW_ID} CertificateARN=${CertificateARN} DomainName=${DomainName}"
 
 # deploy_stack redis-solar-instance-profile instance-profile.yml --capabilities CAPABILITY_NAMED_IAM
 

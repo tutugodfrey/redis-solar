@@ -28,10 +28,10 @@ Parameters:
   CertificateARN:
     Description: AWS CM Certificate to be used with cloudfront
     Type: String
-  CustomDomainName:
+  DomainName:
     Description: Custom domian nane to be use with cloudfront
     Type: String
-    Default: atoms-energy.com
+    Default: kloudln.com
 
 Resources:
   CloudFrontOriginAccessIdentity:
@@ -47,7 +47,7 @@ Resources:
         IPV6Enabled: False
         Enabled: True
         Aliases:
-          - !Sub ${ProjectNameSmall}.${CustomDomainName}
+          - !Sub ${ProjectNameSmall}.${DomainName}
         CacheBehaviors:
           - PathPattern: /
             TargetOriginId:
