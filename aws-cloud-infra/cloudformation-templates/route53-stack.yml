@@ -31,9 +31,16 @@ Parameters:
     Type: String
     Default: A
 
+Conditions:
+  CreateForProd: !Equals
+  # Route53 hosted zone should only be created for the Prod environment
+    - !Ref EnvironmentName
+    - Prod
+
 Resources:
   Route53HostedZone:
     Type: AWS::Route53::HostedZone
+    Condition: CreateForProd
     Properties:
       Name: !Ref DomainName
       HostedZoneConfig:
@@ -43,10 +50,10 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref EnvironmentName
-      # QueryLoggingConfig:
   
   Route53RecordSet:
     Type: AWS::Route53::RecordSet
+    Condition: CreateForProd
     Properties:
       AliasTarget:
         DNSName:
