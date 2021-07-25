@@ -33,15 +33,23 @@ Parameters:
     Type: String
     Default: kloudln.com
 
+Conditions:
+  # Only Prod environment should have Alt DNS configured for cloudfront
+  CreateForProd: !Equals
+    - !Ref EnvironmentName
+    - Prod
+
 Resources:
   CloudFrontOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: CreateForProd
     Properties:
       CloudFrontOriginAccessIdentityConfig:
         Comment: Origin Access Identity for Serverless Static Website
 
   Distribution:
     Type: AWS::CloudFront::Distribution
+    Condition: CreateForProd
     Properties:
       DistributionConfig:
         IPV6Enabled: False
